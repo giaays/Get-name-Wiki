@@ -223,11 +223,16 @@ textarea {
         throw new Error('Không tìm thấy element #mdListName trong trang');
       }
 
-      // Lấy text content và xử lý giống như bookmarklet
+      // Lấy text content và xử lý để lấy format "原文=Tiếng Việt"
       const lines = mdListName.innerText
         .split('\n')
         .map(x => x.trim())
-        .filter(x => x.includes('=') && !/(tổng số|lịch sử|đóng)/i.test(x));
+        .filter(x => {
+          // Lọc các dòng có dấu = và không chứa các từ loại trừ
+          return x.includes('=') && 
+                 !/(tổng số|lịch sử|đóng|total|history|close)/i.test(x) &&
+                 x.length > 0;
+        });
 
       if (!lines.length) {
         throw new Error('Không có dòng hợp lệ nào được tìm thấy');
