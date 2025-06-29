@@ -151,10 +151,9 @@
     <div class="instruction">
       <strong>📝 Hướng dẫn sử dụng:</strong>
       <ol>
-        <li>Truy cập trang Wiki của truyện</li>
-        <li>Nhấn vào nút "Trích xuất từ trang hiện tại" khi đang ở trang đó</li>
-        <li>Hoặc nhập link trang Wiki vào ô bên dưới</li>
-        <li>File sẽ được tự động tải về!</li>
+        <li><strong>Dán link</strong> trang Wiki của truyện vào ô bên dưới</li>
+        <li><strong>Ấn nút</strong> "Trích xuất từ link"</li>
+        <li><strong>Copy hoặc tải kết quả về</strong> - dùng nút Copy hoặc Tải xuống</li>
       </ol>
     </div>
 
@@ -172,6 +171,7 @@
       <input id="fileName" type="text" placeholder="Tên file (tự động tạo từ tiêu đề trang)" />
       <br>
       <button id="downloadBtn" disabled>📁 Tải xuống file TXT</button>
+      <button id="copyBtn" disabled>📋 Copy tất cả</button>
       <div id="status"></div>
       <div id="preview" class="preview" style="display: none;"></div>
     </div>
@@ -237,18 +237,21 @@
     function updatePreview(names) {
       const preview = document.getElementById('preview');
       const downloadBtn = document.getElementById('downloadBtn');
+      const copyBtn = document.getElementById('copyBtn');
       
       if (names.length > 0) {
         preview.style.display = 'block';
+        // Hiển thị tất cả kết quả, không giới hạn
         preview.innerHTML = `<strong class="count">Tìm thấy ${names.length} tên:</strong><br><br>` + 
-                           names.slice(0, 20).join('<br>') + 
-                           (names.length > 20 ? '<br><br>... và ' + (names.length - 20) + ' tên khác' : '');
+                           names.join('<br>');
         downloadBtn.disabled = false;
+        copyBtn.disabled = false;
         extractedNames = names;
         showStatus(`✅ Trích xuất thành công ${names.length} tên!`, 'success');
       } else {
         preview.style.display = 'none';
         downloadBtn.disabled = true;
+        copyBtn.disabled = true;
         extractedNames = [];
         showStatus('❌ Không tìm thấy tên nào!', 'error');
       }
@@ -324,6 +327,28 @@
 
 
 
+
+    // Copy tất cả kết quả
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      if (extractedNames.length === 0) {
+        showStatus('❌ Không có dữ liệu để copy!', 'error');
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(extractedNames.join('\n'));
+        showStatus(`📋 Đã copy ${extractedNames.length} tên vào clipboard!`, 'success');
+      } catch (error) {
+        // Fallback cho trình duyệt không hỗ trợ clipboard API
+        const textArea = document.createElement('textarea');
+        textArea.value = extractedNames.join('\n');
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showStatus(`📋 Đã copy ${extractedNames.length} tên vào clipboard!`, 'success');
+      }
+    });
 
     // Tải xuống file
     document.getElementById('downloadBtn').addEventListener('click', () => {
