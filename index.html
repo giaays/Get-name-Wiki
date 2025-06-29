@@ -1,17 +1,4 @@
-textarea { 
-      width: 100%; 
-      height: 150px; 
-      padding: 12px;
-      border: 2px solid #e2e8f0;
-      border-radius: 8px;
-      font-family: 'Courier New', monospace;
-      resize: vertical;
-      transition: border-color 0.3s;
-    }
-    textarea:focus {
-      outline: none;
-      border-color: #667eea;
-    }<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
@@ -176,7 +163,6 @@ textarea {
       <input id="linkInput" type="text" placeholder="Nhập link trang Wiki của truyện..." />
       <br>
       <button id="autoBtn">📥 Trích xuất từ link</button>
-      <button id="currentPageBtn">🔍 Trích xuất từ trang hiện tại</button>
     </div>
 
 
@@ -194,7 +180,7 @@ textarea {
       <h2>🔖 Bookmarklet (Dành cho cao thủ)</h2>
       <p>Kéo thả link này vào thanh bookmark để sử dụng trên bất kỳ trang nào:</p>
       <div class="bookmarklet">
-        <a href="javascript:(()=>{try{let m=document.getElementById('mdListName');if(!m)return alert('❌ Không thấy nội dung.');let l=m.innerText.split('\n').map(x=>x.trim()).filter(x=>x.includes('=')&&!/(tổng số|lịch sử|đóng)/i.test(x));if(!l.length)return alert('❌ Không có dòng hợp lệ.');let t=document.title.replace(/[\\/:*?\"<>|]+/g,'_'),f=`name2_${t}.txt`,b=new Blob([l.join('\n')],{type:'text/plain'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=f;document.body.appendChild(a);a.click();a.remove()}catch(e){alert('❌ Lỗi: '+e.message),console.error(e)}})()">
+        <a href="javascript:(()=>{try{let m=document.getElementById('mdListName');if(!m)return alert('❌ Không thấy nội dung.');let l=m.innerText.split('\n').map(x=>x.trim()).filter(x=>x.includes('=')&&!/(tổng số|lịch sử|đóng|total|history|close)/i.test(x)&&x.length>0);if(!l.length)return alert('❌ Không có dòng hợp lệ.');let t=document.title.replace(/[\\/:*?\"<>|]+/g,'_'),f=`name2_${t}.txt`,b=new Blob([l.join('\n')],{type:'text/plain'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=f;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u);alert('✅ Đã tải '+l.length+' tên!')}catch(e){alert('❌ Lỗi: '+e.message)}})()">
           📚 Name Extractor Bookmarklet
         </a>
       </div>
@@ -291,20 +277,38 @@ textarea {
       showStatus('🔄 Đang tải trang...', 'info');
       
       try {
-        // Sử dụng proxy để tránh CORS (có thể cần thay đổi tùy theo môi trường)
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(link)}`;
-        const response = await fetch(proxyUrl);
-        const data = await response.json();
+        // Thử nhiều cách để tránh CORS
+        let response;
+        let content;
         
-        if (!data.contents) {
+        // Cách 1: Thử fetch trực tiếp
+        try {
+          response = await fetch(link);
+          content = await response.text();
+        } catch (corsError) {
+          // Cách 2: Sử dụng proxy khác
+          try {
+            const proxyUrl = `https://cors-anywhere.herokuapp.com/${link}`;
+            response = await fetch(proxyUrl);
+            content = await response.text();
+          } catch (proxyError) {
+            // Cách 3: Sử dụng allorigins
+            const allOriginsUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(link)}`;
+            response = await fetch(allOriginsUrl);
+            const data = await response.json();
+            content = data.contents;
+          }
+        }
+        
+        if (!content) {
           throw new Error('Không thể tải nội dung trang');
         }
 
-        const names = extractNamesFromWikiContent(data.contents);
+        const names = extractNamesFromWikiContent(content);
         
         // Tạo tên file từ tiêu đề trang
         const parser = new DOMParser();
-        const doc = parser.parseFromString(data.contents, 'text/html');
+        const doc = parser.parseFromString(content, 'text/html');
         const title = doc.title || 'TruyenWiki';
         currentFileName = generateFileName(title);
         document.getElementById('fileName').value = currentFileName;
@@ -317,41 +321,7 @@ textarea {
       }
     });
 
-    // Trích xuất từ trang hiện tại
-    document.getElementById('currentPageBtn').addEventListener('click', () => {
-      try {
-        const mdListName = document.getElementById('mdListName');
-        if (!mdListName) {
-          // Nếu không có element này, có thể đang chạy trên trang khác
-          showStatus('❌ Không tìm thấy dữ liệu tên trên trang này. Hãy thử sử dụng bookmarklet hoặc nhập link.', 'error');
-          return;
-        }
 
-        const lines = mdListName.innerText
-          .split('\n')
-          .map(x => x.trim())
-          .filter(x => x.includes('=') && !/(tổng số|lịch sử|đóng)/i.test(x));
-
-        if (!lines.length) {
-          throw new Error('Không có dòng hợp lệ nào được tìm thấy');
-        }
-
-        currentFileName = generateFileName(document.title);
-        document.getElementById('fileName').value = currentFileName;
-        
-        updatePreview(lines);
-        
-        // Tự động tải xuống
-        setTimeout(() => {
-          downloadFile(currentFileName, lines.join('\n'));
-          showStatus('🎉 File đã được tải xuống tự động!', 'success');
-        }, 1000);
-        
-      } catch (error) {
-        console.error('Error:', error);
-        showStatus(`❌ Lỗi: ${error.message}`, 'error');
-      }
-    });
 
 
 
