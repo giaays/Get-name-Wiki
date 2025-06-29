@@ -1,71 +1,85 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Wikidich Name Extractor Online</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <title>Wikidich Name Extractor (Nhập Link)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
       font-family: sans-serif;
       padding: 2rem;
-      background: #eef2f7;
+      background: #f0f4f8;
       text-align: center;
     }
+    input[type="url"] {
+      padding: 0.8rem;
+      width: 90%;
+      max-width: 600px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
     button {
-      font-size: 1.2rem;
-      padding: 1rem 2rem;
+      margin-top: 1rem;
+      font-size: 1.1rem;
+      padding: 0.75rem 1.5rem;
       border: none;
       border-radius: 8px;
-      background: #2ecc71;
+      background: #3498db;
       color: white;
       cursor: pointer;
     }
     button:hover {
-      background: #27ae60;
+      background: #2980b9;
     }
     .note {
+      font-size: 0.9rem;
+      color: #666;
       margin-top: 2rem;
-      color: #555;
-      font-size: 0.95rem;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
     }
   </style>
 </head>
 <body>
-  <h1>🧰 Wikidich Name Extractor</h1>
-  <p>➡️ Hãy mở trang truyện Wikidich và ấn nút “Name” trước khi dùng công cụ này.</p>
-  <button onclick="downloadName()">📥 Tải Name</button>
+  <h1>📥 Tải Name từ Wikidich</h1>
+  <p>Nhập link truyện Wikidich vào ô dưới:</p>
+  <input type="url" id="link" placeholder="https://truyenwikidich.net/truyen/..." />
+  <br />
+  <button onclick="openTab()">Mở & Tải Name</button>
+
   <div class="note">
-    Nếu không có gì xảy ra, hãy đảm bảo bạn đã mở modal 'Name' trên trang Wikidich trước đó.<br>
-    File sẽ được tải về với tên <code>name2_[tên tab].txt</code>.
+    Trang sẽ mở truyện ở tab mới. Hãy ấn <strong>nút Name</strong> trong tab đó,<br />
+    sau 3 giây nội dung sẽ tự động tải về.
   </div>
 
   <script>
-    function downloadName() {
-      try {
-        const modal = window.opener?.document?.getElementById('mdListName');
-        if (!modal) return alert("❌ Không tìm thấy phần name từ trang Wikidich đã mở.");
-
-        let lines = modal.innerText.split('\n').map(l => l.trim());
-        lines = lines.filter(l =>
-          l.includes('=') &&
-          !/tổng số|lịch sử|đóng/i.test(l)
-        );
-
-        if (!lines.length) return alert("❌ Không có dòng hợp lệ.");
-        const content = lines.join('\n');
-        const title = window.opener?.document?.title?.replace(/[\\/:*?"<>|]+/g, '_') || 'wikidich';
-        const filename = `name2_${title}.txt`;
-
-        const blob = new Blob([content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        a.remove();
-      } catch (e) {
-        alert("❌ Lỗi: " + e.message);
+    function openTab() {
+      const url = document.getElementById("link").value.trim();
+      if (!url.includes("truyenwikidich.net")) {
+        alert("⚠️ Link không hợp lệ!");
+        return;
       }
+      const js = `
+        setTimeout(() => {
+          const box = document.getElementById('mdListName');
+          if (!box) return alert('❌ Chưa mở Name hoặc không thấy nội dung.');
+          const text = box.innerText.split('\\n')
+            .map(l => l.trim())
+            .filter(l => l.includes('=') && !/tổng số|đóng|lịch sử/i.test(l))
+            .join('\\n');
+          const title = document.title.replace(/[\\\\/:*?"<>|]+/g, '_');
+          const blob = new Blob([text], { type: 'text/plain' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'name2_' + title + '.txt';
+          a.click();
+        }, 3000);
+      `;
+      const encodedJS = encodeURIComponent(js);
+      const target = `${url}#extract:${encodedJS}`;
+      window.open(target, '_blank');
     }
   </script>
 </body>
