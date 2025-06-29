@@ -1,335 +1,266 @@
-<!DOCTYPE html>
+textarea { 
+      width: 100%; 
+      height: 150px; 
+      padding: 12px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      resize: vertical;
+      transition: border-color 0.3s;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Name Extractor – TruyenWikiDich</title>
-  
-  <!-- Materialize CSS CDN -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/material-design-icons/3.0.1/iconfont/material-icons.min.css" rel="stylesheet">
-  
   <style>
     body { 
-      font-family: 'Roboto', sans-serif; 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      padding: 20px; 
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #333;
       min-height: 100vh;
-      margin: 0;
-      padding: 20px;
     }
-    
     .container {
-      max-width: 1000px;
+      max-width: 800px;
       margin: 0 auto;
-    }
-    
-    .card {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 30px;
       border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-      margin-bottom: 2rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
     }
-    
-    .card-title {
-      color: #2196F3 !important;
-      font-weight: 600;
-      font-size: 1.8rem;
+    h1 {
+      text-align: center;
+      color: #4a5568;
+      margin-bottom: 10px;
+      font-size: 2.5em;
     }
-    
-    .btn-extract {
-      background: linear-gradient(45deg, #4CAF50, #45a049) !important;
-      border-radius: 25px;
-      text-transform: none;
-      font-weight: 600;
-      font-size: 1.1rem;
-      margin: 10px 5px;
-      height: 48px;
-      line-height: 48px;
+    .subtitle {
+      text-align: center;
+      color: #718096;
+      margin-bottom: 30px;
+      font-style: italic;
     }
-    
-    .btn-download {
-      background: linear-gradient(45deg, #FF6B35, #F7931E) !important;
-      border-radius: 25px;
-      text-transform: none;
-      font-weight: 600;
-      margin: 10px 5px;
-    }
-    
-    .name-preview {
-      max-height: 400px;
-      overflow-y: auto;
-      border: 2px solid #e0e0e0;
-      border-radius: 12px;
+    .section {
+      margin-bottom: 25px;
       padding: 20px;
-      background: #ffffff;
+      background: #f8f9fa;
+      border-radius: 10px;
+      border-left: 4px solid #667eea;
+    }
+    input[type="text"] { 
+      width: 100%; 
+      padding: 12px; 
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    textarea { 
+      width: 100%; 
+      height: 150px; 
+      padding: 12px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      resize: vertical;
+      transition: border-color 0.3s;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    button { 
+      padding: 12px 24px; 
+      margin: 10px 5px 10px 0; 
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    button:hover { 
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+    button:disabled {
+      background: #cbd5e0;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    .status {
+      padding: 10px;
+      border-radius: 8px;
+      margin: 10px 0;
+      font-weight: 500;
+    }
+    .status.success {
+      background: #c6f6d5;
+      color: #22543d;
+      border: 1px solid #9ae6b4;
+    }
+    .status.error {
+      background: #fed7d7;
+      color: #742a2a;
+      border: 1px solid #fc8181;
+    }
+    .status.info {
+      background: #bee3f8;
+      color: #2a4365;
+      border: 1px solid #90cdf4;
+    }
+    .preview {
+      background: #fff;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+      max-height: 200px;
+      overflow-y: auto;
       font-family: 'Courier New', monospace;
       font-size: 14px;
-      line-height: 1.6;
-      white-space: pre-wrap;
-      margin: 15px 0;
+      line-height: 1.4;
     }
-    
-    .stats-card {
-      background: linear-gradient(45deg, #2196F3, #21CBF3);
-      color: white;
-      border-radius: 15px;
-      padding: 25px;
-      text-align: center;
-      margin: 20px 0;
+    .count {
+      font-weight: bold;
+      color: #667eea;
     }
-    
-    .stats-number {
-      font-size: 2.5rem;
-      font-weight: 700;
-      margin-bottom: 5px;
+    .bookmarklet {
+      background: #2d3748;
+      color: #e2e8f0;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      word-break: break-all;
+      margin-top: 10px;
     }
-    
-    .loading {
-      display: none;
-      text-align: center;
-      padding: 20px;
-    }
-    
-    .hero-section {
-      text-align: center;
-      padding: 2rem 0;
-      color: white;
-      margin-bottom: 2rem;
-    }
-    
-    .hero-title {
-      font-size: 2.5rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-    }
-    
-    .hero-subtitle {
-      font-size: 1.2rem;
-      opacity: 0.9;
-    }
-
-    /* Fix input field */
-    .input-field label {
-      color: #9e9e9e;
-    }
-    
-    .input-field input[type=text]:focus + label,
-    .input-field input[type=url]:focus + label {
-      color: #2196F3 !important;
-    }
-    
-    .input-field input[type=text]:focus,
-    .input-field input[type=url]:focus {
-      border-bottom: 1px solid #2196F3 !important;
-      box-shadow: 0 1px 0 0 #2196F3 !important;
-    }
-
-    .input-field .prefix.active {
-      color: #2196F3;
-    }
-
-    /* Test section */
-    .test-section {
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-      padding: 20px;
-      margin: 20px 0;
-      color: white;
+    .instruction {
+      background: #fff5cd;
+      border: 1px solid #f6e05e;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
     }
   </style>
 </head>
 <body>
-  <div class="hero-section">
-    <div class="container">
-      <h1 class="hero-title">
-        <i class="material-icons large" style="vertical-align: middle;">text_fields</i>
-        Name Extractor
-      </h1>
-      <p class="hero-subtitle">Trích xuất danh sách tên nhân vật từ TruyenWikiDich</p>
-    </div>
-  </div>
-
   <div class="container">
-    <!-- Test Section -->
-    <div class="test-section">
-      <h5><i class="material-icons left">bug_report</i>Test CORS & Fetch</h5>
-      <button id="testBtn" class="btn waves-effect waves-light red">
-        <i class="material-icons left">play_arrow</i>
-        Test Fetch với link mẫu
-      </button>
-      <div id="testResult" style="margin-top: 15px; font-family: monospace; font-size: 12px;"></div>
+    <h1>🚀 Name Extractor</h1>
+    <p class="subtitle">Trích xuất và tải danh sách tên nhân vật từ TruyenWikiDich một cách tự động</p>
+
+    <div class="instruction">
+      <strong>📝 Hướng dẫn sử dụng:</strong>
+      <ol>
+        <li>Truy cập trang Wiki của truyện</li>
+        <li>Nhấn vào nút "Trích xuất từ trang hiện tại" khi đang ở trang đó</li>
+        <li>Hoặc nhập link trang Wiki vào ô bên dưới</li>
+        <li>File sẽ được tự động tải về!</li>
+      </ol>
     </div>
 
-    <!-- Main Card -->
-    <div class="card">
-      <div class="card-content">
-        <span class="card-title center-align">
-          <i class="material-icons left">link</i>
-          Trích xuất tự động từ link
-        </span>
-        
-        <div class="row" style="margin-top: 2rem;">
-          <div class="col s12">
-            <div class="input-field">
-              <i class="material-icons prefix">link</i>
-              <input id="linkInput" type="url" class="validate" placeholder="https://truyenwikidich.net/truyen/ten-truyen">
-              <label for="linkInput">Link trang truyện TruyenWikiDich</label>
-              <span class="helper-text">
-                Paste link trang truyện vào đây và nhấn nút trích xuất
-              </span>
-            </div>
-          </div>
-        </div>
-        
-        <div class="center-align" style="margin: 2rem 0;">
-          <button id="extractBtn" class="btn btn-extract waves-effect waves-light btn-large">
-            <i class="material-icons left">download</i>
-            Trích xuất danh sách Name
-          </button>
-        </div>
-        
-        <!-- Loading -->
-        <div id="loading" class="loading">
-          <div class="progress">
-            <div class="indeterminate"></div>
-          </div>
-          <p style="margin-top: 1rem; color: #666;">Đang trích xuất dữ liệu từ trang web...</p>
-        </div>
-        
-        <!-- Debug info -->
-        <div id="debugInfo" style="display: none; background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 15px 0;">
-          <h6>Debug Information:</h6>
-          <pre id="debugContent" style="font-size: 12px; max-height: 200px; overflow-y: auto;"></pre>
-        </div>
-      </div>
+    <div class="section">
+      <h2>🎯 Trích xuất tự động</h2>
+      <input id="linkInput" type="text" placeholder="Nhập link trang Wiki của truyện..." />
+      <br>
+      <button id="autoBtn">📥 Trích xuất từ link</button>
+      <button id="currentPageBtn">🔍 Trích xuất từ trang hiện tại</button>
     </div>
 
-    <!-- Results Card -->
-    <div id="resultsCard" class="card" style="display: none;">
-      <div class="card-content">
-        <span class="card-title">
-          <i class="material-icons left">list</i>
-          Kết quả trích xuất
-        </span>
-        
-        <div id="nameStats" class="stats-card">
-          <div class="stats-number" id="nameCount">0</div>
-          <div>tên nhân vật được tìm thấy</div>
-        </div>
-        
-        <div class="row">
-          <div class="col s12 m8">
-            <h6>Danh sách tên:</h6>
-            <div id="namePreview" class="name-preview">
-              Chưa có dữ liệu
-            </div>
-          </div>
-          <div class="col s12 m4">
-            <div class="input-field">
-              <i class="material-icons prefix">save</i>
-              <input id="fileName" type="text" class="validate" value="TenTruyen_Name">
-              <label for="fileName">Tên file</label>
-            </div>
-            
-            <button id="downloadBtn" class="btn btn-download waves-effect waves-light">
-              <i class="material-icons left">get_app</i>
-              Tải về TXT
-            </button>
-            
-            <br><br>
-            
-            <button id="copyBtn" class="btn waves-effect waves-light blue-grey">
-              <i class="material-icons left">content_copy</i>
-              Copy tất cả
-            </button>
-          </div>
-        </div>
+
+
+    <div class="section">
+      <h2>💾 Kết quả và tải về</h2>
+      <input id="fileName" type="text" placeholder="Tên file (tự động tạo từ tiêu đề trang)" />
+      <br>
+      <button id="downloadBtn" disabled>📁 Tải xuống file TXT</button>
+      <div id="status"></div>
+      <div id="preview" class="preview" style="display: none;"></div>
+    </div>
+
+    <div class="section">
+      <h2>🔖 Bookmarklet (Dành cho cao thủ)</h2>
+      <p>Kéo thả link này vào thanh bookmark để sử dụng trên bất kỳ trang nào:</p>
+      <div class="bookmarklet">
+        <a href="javascript:(()=>{try{let m=document.getElementById('mdListName');if(!m)return alert('❌ Không thấy nội dung.');let l=m.innerText.split('\n').map(x=>x.trim()).filter(x=>x.includes('=')&&!/(tổng số|lịch sử|đóng)/i.test(x));if(!l.length)return alert('❌ Không có dòng hợp lệ.');let t=document.title.replace(/[\\/:*?\"<>|]+/g,'_'),f=`name2_${t}.txt`,b=new Blob([l.join('\n')],{type:'text/plain'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=f;document.body.appendChild(a);a.click();a.remove()}catch(e){alert('❌ Lỗi: '+e.message),console.error(e)}})()">
+          📚 Name Extractor Bookmarklet
+        </a>
       </div>
     </div>
   </div>
 
-  <!-- Materialize JS CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-  
   <script>
     let extractedNames = [];
+    let currentFileName = '';
 
-    function showToast(message, classes = 'green') {
-      M.toast({html: message, classes: classes, displayLength: 4000});
+    function showStatus(message, type = 'info') {
+      const statusDiv = document.getElementById('status');
+      statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+      setTimeout(() => {
+        if (type !== 'success') statusDiv.innerHTML = '';
+      }, 5000);
     }
 
-    function debugLog(message, data = null) {
-      console.log(message, data);
-      const debugInfo = document.getElementById('debugInfo');
-      const debugContent = document.getElementById('debugContent');
+    function extractNamesFromWikiContent(content) {
+      // Tìm element có id="mdListName" trong HTML
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(content, 'text/html');
+      const mdListName = doc.getElementById('mdListName');
       
-      debugInfo.style.display = 'block';
-      const timestamp = new Date().toLocaleTimeString();
-      debugContent.textContent += `[${timestamp}] ${message}\n`;
-      if (data) {
-        debugContent.textContent += JSON.stringify(data, null, 2) + '\n';
+      if (!mdListName) {
+        throw new Error('Không tìm thấy element #mdListName trong trang');
       }
-      debugContent.textContent += '---\n';
-      debugContent.scrollTop = debugContent.scrollHeight;
+
+      // Lấy text content và xử lý giống như bookmarklet
+      const lines = mdListName.innerText
+        .split('\n')
+        .map(x => x.trim())
+        .filter(x => x.includes('=') && !/(tổng số|lịch sử|đóng)/i.test(x));
+
+      if (!lines.length) {
+        throw new Error('Không có dòng hợp lệ nào được tìm thấy');
+      }
+
+      return lines;
     }
 
-    function extractNamesFromContent(content) {
-      debugLog('Bắt đầu trích xuất tên từ content', {contentLength: content.length});
-      
-      // Pattern 1: 中文字符=Tên Tiếng Việt
-      const pattern1 = /([一-龯\u4e00-\u9fff]+)=([^<>\n\r=]+)/g;
-      let names = [];
-      let match;
-      
-      while ((match = pattern1.exec(content)) !== null) {
-        const vietnameseName = match[2].trim();
-        if (vietnameseName && vietnameseName.length > 1) {
-          names.push(vietnameseName);
-        }
-      }
-      
-      debugLog('Pattern 1 tìm thấy:', names);
-      
-      // Pattern 2: Tìm trong các dòng
-      if (names.length === 0) {
-        const lines = content.split(/[\r\n]+/);
-        for (let line of lines) {
-          line = line.trim();
-          if (line.includes('=')) {
-            const parts = line.split('=');
-            if (parts.length >= 2) {
-              const name = parts[1].trim();
-              if (name && name.length > 1 && !name.includes('<') && !name.includes('>')) {
-                names.push(name);
-              }
-            }
-          }
-        }
-        debugLog('Pattern 2 tìm thấy:', names);
-      }
-      
-      // Loại bỏ trùng lặp và sắp xếp
-      names = [...new Set(names)].filter(name => name.length > 0).sort();
-      debugLog('Kết quả cuối cùng:', names);
-      
-      return names;
+
+
+    function generateFileName(title = '') {
+      const cleanTitle = title || document.title || 'TruyenWiki';
+      return `name2_${cleanTitle.replace(/[\\/:*?"<>|]+/g, '_')}.txt`;
     }
 
-    function updateResults(names) {
-      extractedNames = names;
+    function updatePreview(names) {
+      const preview = document.getElementById('preview');
+      const downloadBtn = document.getElementById('downloadBtn');
       
-      document.getElementById('nameCount').textContent = names.length;
-      
-      const preview = document.getElementById('namePreview');
       if (names.length > 0) {
-        preview.textContent = names.join('\n');
+        preview.style.display = 'block';
+        preview.innerHTML = `<strong class="count">Tìm thấy ${names.length} tên:</strong><br><br>` + 
+                           names.slice(0, 20).join('<br>') + 
+                           (names.length > 20 ? '<br><br>... và ' + (names.length - 20) + ' tên khác' : '');
+        downloadBtn.disabled = false;
+        extractedNames = names;
+        showStatus(`✅ Trích xuất thành công ${names.length} tên!`, 'success');
       } else {
-        preview.textContent = 'Không tìm thấy tên nào';
+        preview.style.display = 'none';
+        downloadBtn.disabled = true;
+        extractedNames = [];
+        showStatus('❌ Không tìm thấy tên nào!', 'error');
       }
-      
-      const resultsCard = document.getElementById('resultsCard');
-      resultsCard.style.display = 'block';
-      resultsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function downloadFile(filename, content) {
@@ -337,149 +268,108 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = filename + '.txt';
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }
 
-    // Test function
-    document.getElementById('testBtn').addEventListener('click', async () => {
-      const testResult = document.getElementById('testResult');
-      testResult.innerHTML = 'Đang test...';
+    // Trích xuất từ link
+    document.getElementById('autoBtn').addEventListener('click', async () => {
+      const link = document.getElementById('linkInput').value.trim();
+      if (!link) {
+        showStatus('❌ Vui lòng nhập link trang truyện!', 'error');
+        return;
+      }
+
+      showStatus('🔄 Đang tải trang...', 'info');
       
       try {
-        // Test với một URL đơn giản trước
-        const testUrl = 'https://httpbin.org/get';
-        debugLog('Testing fetch với URL:', testUrl);
-        
-        const response = await fetch(testUrl);
+        // Sử dụng proxy để tránh CORS (có thể cần thay đổi tùy theo môi trường)
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(link)}`;
+        const response = await fetch(proxyUrl);
         const data = await response.json();
         
-        testResult.innerHTML = `
-          <div style="color: #4CAF50;">✅ CORS OK - Có thể fetch!</div>
-          <div>Status: ${response.status}</div>
-          <div>Response: ${JSON.stringify(data, null, 2).substring(0, 200)}...</div>
-        `;
+        if (!data.contents) {
+          throw new Error('Không thể tải nội dung trang');
+        }
+
+        const names = extractNamesFromWikiContent(data.contents);
         
-        debugLog('Test thành công:', data);
+        // Tạo tên file từ tiêu đề trang
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(data.contents, 'text/html');
+        const title = doc.title || 'TruyenWiki';
+        currentFileName = generateFileName(title);
+        document.getElementById('fileName').value = currentFileName;
+        
+        updatePreview(names);
         
       } catch (error) {
-        testResult.innerHTML = `
-          <div style="color: #f44336;">❌ CORS Error:</div>
-          <div>${error.message}</div>
-          <div>Có thể cần proxy server hoặc CORS extension</div>
-        `;
-        debugLog('Test lỗi:', error);
+        console.error('Error:', error);
+        showStatus(`❌ Lỗi: ${error.message}`, 'error');
       }
     });
 
-    // Main extract function
-    document.getElementById('extractBtn').addEventListener('click', async () => {
-      const link = document.getElementById('linkInput').value.trim();
-      
-      if (!link) {
-        showToast('Vui lòng nhập link trang truyện!', 'red');
-        return;
-      }
-
-      const loading = document.getElementById('loading');
-      const extractBtn = document.getElementById('extractBtn');
-      
+    // Trích xuất từ trang hiện tại
+    document.getElementById('currentPageBtn').addEventListener('click', () => {
       try {
-        loading.style.display = 'block';
-        extractBtn.disabled = true;
-        extractBtn.innerHTML = '<i class="material-icons left">hourglass_empty</i>Đang xử lý...';
-        
-        debugLog('Bắt đầu fetch:', link);
-        showToast('Đang trích xuất dữ liệu...', 'blue');
-        
-        const response = await fetch(link);
-        debugLog('Response status:', response.status);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const mdListName = document.getElementById('mdListName');
+        if (!mdListName) {
+          // Nếu không có element này, có thể đang chạy trên trang khác
+          showStatus('❌ Không tìm thấy dữ liệu tên trên trang này. Hãy thử sử dụng bookmarklet hoặc nhập link.', 'error');
+          return;
         }
-        
-        const html = await response.text();
-        debugLog('HTML content received:', {length: html.length, preview: html.substring(0, 500)});
-        
-        // Tìm nội dung có pattern tên
-        const names = extractNamesFromContent(html);
-        
-        if (names.length > 0) {
-          updateResults(names);
-          showToast(`Trích xuất thành công ${names.length} tên!`, 'green');
-          
-          // Auto fill filename
-          const urlParts = link.split('/');
-          const storyName = urlParts[urlParts.length - 1] || urlParts[urlParts.length - 2];
-          if (storyName) {
-            document.getElementById('fileName').value = storyName + '_Name';
-            M.updateTextFields();
-          }
-        } else {
-          showToast('Không tìm thấy danh sách tên trong trang này!', 'orange');
-          updateResults([]);
+
+        const lines = mdListName.innerText
+          .split('\n')
+          .map(x => x.trim())
+          .filter(x => x.includes('=') && !/(tổng số|lịch sử|đóng)/i.test(x));
+
+        if (!lines.length) {
+          throw new Error('Không có dòng hợp lệ nào được tìm thấy');
         }
+
+        currentFileName = generateFileName(document.title);
+        document.getElementById('fileName').value = currentFileName;
+        
+        updatePreview(lines);
+        
+        // Tự động tải xuống
+        setTimeout(() => {
+          downloadFile(currentFileName, lines.join('\n'));
+          showStatus('🎉 File đã được tải xuống tự động!', 'success');
+        }, 1000);
         
       } catch (error) {
-        debugLog('Error trong extract:', error);
-        showToast('Lỗi: ' + error.message, 'red');
-        updateResults([]);
-      } finally {
-        loading.style.display = 'none';
-        extractBtn.disabled = false;
-        extractBtn.innerHTML = '<i class="material-icons left">download</i>Trích xuất danh sách Name';
+        console.error('Error:', error);
+        showStatus(`❌ Lỗi: ${error.message}`, 'error');
       }
     });
 
-    // Download function
+
+
+    // Tải xuống file
     document.getElementById('downloadBtn').addEventListener('click', () => {
       if (extractedNames.length === 0) {
-        showToast('Không có dữ liệu để tải xuống!', 'red');
+        showStatus('❌ Không có dữ liệu để tải xuống!', 'error');
         return;
       }
-      
-      const filename = document.getElementById('fileName').value.trim() || 'TenTruyen_Name';
-      downloadFile(filename, extractedNames.join('\r\n'));
-      showToast(`Đã tải xuống ${extractedNames.length} tên!`, 'green');
-    });
 
-    // Copy function
-    document.getElementById('copyBtn').addEventListener('click', () => {
-      if (extractedNames.length === 0) {
-        showToast('Không có dữ liệu để copy!', 'red');
-        return;
+      let filename = document.getElementById('fileName').value.trim();
+      if (!filename) {
+        filename = currentFileName || 'names.txt';
+      } else if (!filename.endsWith('.txt')) {
+        filename += '.txt';
       }
-      
-      const text = extractedNames.join('\n');
-      navigator.clipboard.writeText(text).then(() => {
-        showToast('Đã copy danh sách tên!', 'green');
-      }).catch(() => {
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        showToast('Đã copy danh sách tên!', 'green');
-      });
+
+      downloadFile(filename, extractedNames.join('\n'));
+      showStatus(`🎉 Đã tải xuống file "${filename}" với ${extractedNames.length} tên!`, 'success');
     });
 
-    // Enter key support
-    document.getElementById('linkInput').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        document.getElementById('extractBtn').click();
-      }
-    });
-
-    // Initialize
-    document.addEventListener('DOMContentLoaded', function() {
-      M.updateTextFields();
-      debugLog('Page loaded successfully');
-    });
+    // Tự động focus vào input đầu tiên
+    document.getElementById('linkInput').focus();
   </script>
 </body>
 </html>
