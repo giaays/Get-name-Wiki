@@ -114,27 +114,6 @@
             color: #2b6cb0;
             border: 1px solid #90cdf4;
         }
-        
-        .example {
-            background: #f7fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
-        }
-        
-        .example h3 {
-            margin-top: 0;
-            color: #4a5568;
-        }
-        
-        .fixed-chars {
-            background: #fed7e2;
-            color: #97266d;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-family: monospace;
-        }
     </style>
 </head>
 <body>
@@ -168,306 +147,214 @@
     </div>
 
     <script>
-        // Bản đồ các ký tự bị lỗi encoding - chỉ những ký tự trông giống chữ gốc
+        // Bản đồ CJK Radicals Supplement (U+2E80-2EFF) - 115 radicals đầy đủ
         const charMap = {
-            // Các ký tự phổ biến bị lỗi encoding
-            '⼉': '儿',  // con
-            '⻝': '食',  // thức ăn
-            '⼦': '子',  // con trai  
-            '⻔': '门',  // cửa
-            '⽤': '用',  // dùng
-            '⽅': '方',  // phương
-            '⼜': '又',  // lại
+            // U+2E80-2E8F: Các radical cơ bản
+            '⺀': '々',  // CJK Radical Repeat
+            '⺁': '厂',  // CJK Radical Cliff
+            '⺂': '乙',  // CJK Radical Second One
+            '⺃': '乚',  // CJK Radical Second Two
+            '⺄': '乛',  // CJK Radical Second Three
+            '⺅': '亻',  // CJK Radical Person
+            '⺆': '冂',  // CJK Radical Box
+            '⺇': '几',  // CJK Radical Table
+            '⺈': '刀',  // CJK Radical Knife One
+            '⺉': '刂',  // CJK Radical Knife Two
+            '⺊': '卜',  // CJK Radical Divination
+            '⺋': '卩',  // CJK Radical Seal
+            '⺌': '⺌',  // CJK Radical Small One
+            '⺍': '⺍',  // CJK Radical Small Two
+            '⺎': '⺎',  // CJK Radical Lame One
+            '⺏': '⺏',  // CJK Radical Lame Two
+            
+            // U+2E90-2E9F
+            '⺐': '⺐',  // CJK Radical Lame Three
+            '⺑': '⺑',  // CJK Radical Lame Four
+            '⺒': '⺒',  // CJK Radical Snake
+            '⺓': '⺓',  // CJK Radical Thread
+            '⺔': '⺔',  // CJK Radical Snout One
+            '⺕': '⺕',  // CJK Radical Snout Two
+            '⺖': '忄',  // CJK Radical Heart One
+            '⺗': '⺗',  // CJK Radical Heart Two
+            '⺘': '扌',  // CJK Radical Hand
+            '⺙': '⺙',  // CJK Radical Rap (U+2E99)
+            '⺚': '攴',  // CJK Radical Rap (U+2E9A) - BỔ SUNG MỚI
+            '⺛': '攵',  // CJK Radical Choke
+            '⺜': '⺜',  // CJK Radical Sun
+            '⺝': '⺝',  // CJK Radical Moon
+            '⺞': '⺞',  // CJK Radical Death
+            '⺟': '⺟',  // CJK Radical Mother
+            
+            // U+2EA0-2EAF
+            '⺠': '⺠',  // CJK Radical Civilian
+            '⺡': '氵',  // CJK Radical Water One
+            '⺢': '⺢',  // CJK Radical Water Two
+            '⺣': '灬',  // CJK Radical Fire
+            '⺤': '⺤',  // CJK Radical Paw One
+            '⺥': '⺥',  // CJK Radical Paw Two
+            '⺦': '⺦',  // CJK Radical Simplified Half Tree Trunk
+            '⺧': '⺧',  // CJK Radical Cow
+            '⺨': '犭',  // CJK Radical Dog
+            '⺩': '⺩',  // CJK Radical Jade
+            '⺪': '⺪',  // CJK Radical Bolt of Cloth
+            '⺫': '⺫',  // CJK Radical Eye
+            '⺬': '⺬',  // CJK Radical Spirit One
+            '⺭': '⺭',  // CJK Radical Spirit Two
+            '⺮': '⺮',  // CJK Radical Bamboo
+            '⺯': '⺯',  // CJK Radical Silk
+            
+            // U+2EB0-2EBF
+            '⺰': '纟',  // CJK Radical C-Simplified Silk
+            '⺱': '⺱',  // CJK Radical Net One
+            '⺲': '⺲',  // CJK Radical Net Two
+            '⺳': '⺳',  // CJK Radical Net Three
+            '⺴': '⺴',  // CJK Radical Net Four
+            '⺵': '⺵',  // CJK Radical Mesh
+            '⺶': '⺶',  // CJK Radical Sheep
+            '⺷': '⺷',  // CJK Radical Ram
+            '⺸': '⺸',  // CJK Radical Ewe
+            '⺹': '⺹',  // CJK Radical Old
+            '⺺': '⺺',  // CJK Radical Brush One
+            '⺻': '⺻',  // CJK Radical Brush Two
+            '⺼': '⺼',  // CJK Radical Meat
+            '⺽': '⺽',  // CJK Radical Mortar
+            '⺾': '艹',  // CJK Radical Grass One
+            '⺿': '⺿',  // CJK Radical Grass Two
+            
+            // U+2EC0-2ECF
+            '⻀': '⻀',  // CJK Radical Grass Three
+            '⻁': '⻁',  // CJK Radical Tiger
+            '⻂': '⻂',  // CJK Radical Clothes
+            '⻃': '⻃',  // CJK Radical West One
+            '⻄': '⻄',  // CJK Radical West Two
+            '⻅': '见',  // CJK Radical C-Simplified See
+            '⻆': '角',  // CJK Radical Simplified Horn
+            '⻇': '⻇',  // CJK Radical Horn
+            '⻈': '讠',  // CJK Radical C-Simplified Speech
+            '⻉': '贝',  // CJK Radical C-Simplified Shell
+            '⻊': '⻊',  // CJK Radical Foot
+            '⻋': '车',  // CJK Radical C-Simplified Cart
+            '⻌': '⻌',  // CJK Radical Simplified Walk
+            '⻍': '⻍',  // CJK Radical Walk One
+            '⻎': '⻎',  // CJK Radical Walk Two
+            '⻏': '⻏',  // CJK Radical City
+            
+            // U+2ED0-2EDF
+            '⻐': '钅',  // CJK Radical C-Simplified Gold
+            '⻑': '⻑',  // CJK Radical Long One
+            '⻒': '⻒',  // CJK Radical Long Two
+            '⻓': '长',  // CJK Radical C-Simplified Long
+            '⻔': '门',  // CJK Radical C-Simplified Gate
+            '⻕': '⻕',  // CJK Radical Mound One
+            '⻖': '⻖',  // CJK Radical Mound Two
+            '⻗': '⻗',  // CJK Radical Rain
+            '⻘': '⻘',  // CJK Radical Blue
+            '⻙': '韦',  // CJK Radical C-Simplified Tanned Leather
+            '⻚': '页',  // CJK Radical C-Simplified Leaf
+            '⻛': '风',  // CJK Radical C-Simplified Wind
+            '⻜': '飞',  // CJK Radical C-Simplified Fly
+            '⻝': '食',  // CJK Radical Eat One
+            '⻞': '⻞',  // CJK Radical Eat Two
+            '⻟': '⻟',  // CJK Radical Eat Three
+            
+            // U+2EE0-2EF3
+            '⻠': '饣',  // CJK Radical C-Simplified Eat
+            '⻡': '⻡',  // CJK Radical Head
+            '⻢': '马',  // CJK Radical C-Simplified Horse
+            '⻣': '⻣',  // CJK Radical Bone
+            '⻤': '⻤',  // CJK Radical Ghost
+            '⻥': '鱼',  // CJK Radical C-Simplified Fish
+            '⻦': '鸟',  // CJK Radical C-Simplified Bird
+            '⻧': '卤',  // CJK Radical C-Simplified Salt
+            '⻨': '⻨',  // CJK Radical Simplified Wheat
+            '⻩': '⻩',  // CJK Radical Simplified Yellow
+            '⻪': '黾',  // CJK Radical C-Simplified Frog
+            '⻫': '⻫',  // CJK Radical J-Simplified Even
+            '⻬': '齐',  // CJK Radical C-Simplified Even
+            '⻭': '⻭',  // CJK Radical J-Simplified Tooth
+            '⻮': '齿',  // CJK Radical C-Simplified Tooth
+            '⻯': '⻯',  // CJK Radical J-Simplified Dragon
+            '⻰': '龙',  // CJK Radical C-Simplified Dragon
+            '⻱': '⻱',  // CJK Radical Turtle
+            '⻲': '⻲',  // CJK Radical J-Simplified Turtle
+            '⻳': '龟',  // CJK Radical C-Simplified Turtle
+            
+            // Kangxi Radicals (U+2F00-2FD5) - 214 radicals cơ bản
             '⼀': '一',  // một
-            '⼗': '十',  // mười
-            '⼤': '大',  // lớn
+            '⼁': '丨',  // gốc
+            '⼂': '丶',  // chấm
+            '⼃': '丿',  // phiến
+            '⼄': '乙',  // ất
+            '⼅': '亅',  // móc
+            '⼆': '二',  // hai
+            '⼇': '亠',  // đầu
             '⼈': '人',  // người
+            '⼉': '儿',  // con
             '⼊': '入',  // vào
             '⼋': '八',  // tám
-            '⼒': '力',  // sức mạnh
+            '⼌': '冂',  // khung
+            '⼍': '冖',  // mũ
+            '⼎': '冫',  // băng
+            '⼏': '几',  // ghế
+            '⼐': '凵',  // hố
             '⼑': '刀',  // dao
+            '⼒': '力',  // sức
+            '⼓': '勹',  // bao
+            '⼔': '匕',  // thìa
+            '⼕': '匚',  // hộp
+            '⼖': '匸',  // hộp ẩn
+            '⼗': '十',  // mười
+            '⼘': '卜',  // bói
+            '⼙': '卩',  // ấn
+            '⼚': '厂',  // vách đá
+            '⼛': '厶',  // tư
+            '⼜': '又',  // lại
+            '⼝': '口',  // miệng
+            '⼞': '囗',  // vây
+            '⼟': '土',  // đất
+            '⼠': '士',  // sĩ
+            '⼡': '夂',  // đi chậm
+            '⼢': '夊',  // đi chậm 2
+            '⼣': '夕',  // chiều
+            '⼤': '大',  // lớn
             '⼥': '女',  // nữ
+            '⼦': '子',  // con
+            '⼧': '宀',  // mái nhà
+            '⼨': '寸',  // tấc
             '⼩': '小',  // nhỏ
+            '⼪': '尢',  // què
+            '⼫': '尸',  // xác
+            '⼬': '屮',  // mầm
+            '⼭': '山',  // núi
+            '⼮': '巛',  // sông
             '⼯': '工',  // công
             '⼰': '己',  // bản thân
             '⼱': '巾',  // khăn
             '⼲': '干',  // khô
+            '⼳': '幺',  // mảnh
             '⼴': '广',  // rộng
+            '⼵': '廴',  // kéo dài
+            '⼶': '廾',  // nâng
+            '⼷': '弋',  // cọc
             '⼸': '弓',  // cung
+            '⼹': '彐',  // snout
+            '⼺': '彡',  // lông
+            '⼻': '彳',  // bước
             '⼼': '心',  // tim
+            '⼽': '戈',  // mác
+            '⼾': '戶',  // cửa
             '⼿': '手',  // tay
-            '⽀': '支',  // chi nhánh
+            '⽀': '支',  // chi
+            '⽁': '攴',  // đánh
             '⽂': '文',  // văn
+            '⽃': '斗',  // đấu
+            '⽄': '斤',  // cân
+            '⽅': '方',  // phương
+            '⽆': '无',  // không
             '⽇': '日',  // ngày
+            '⽈': '曰',  // rằng
             '⽉': '月',  // tháng
             '⽊': '木',  // gỗ
-            '⽔': '水',  // nước
-            '⽕': '火',  // lửa
-            '⽗': '父',  // cha
-            '⽚': '片',  // mảnh
-            '⽛': '牙',  // răng
-            '⽜': '牛',  // bò
-            '⽝': '犬',  // chó
-            '⽟': '玉',  // ngọc
-            '⽡': '瓦',  // ngói
-            '⽢': '甘',  // ngọt
-            '⽣': '生',  // sinh
-            '⽥': '田',  // ruộng
-            '⽩': '白',  // trắng
-            '⽪': '皮',  // da
-            '⽫': '皿',  // đĩa
-            '⽬': '目',  // mắt
-            '⽯': '石',  // đá
-            '⽰': '示',  // chỉ
-            '⽲': '禾',  // lúa
-            '⽳': '穴',  // lỗ
-            '⽴': '立',  // đứng
-            '⽵': '竹',  // tre
-            '⽶': '米',  // gạo
-            '⽷': '糸',  // tơ
-            '⽹': '网',  // mạng
-            '⽺': '羊',  // cừu
-            '⽻': '羽',  // lông
-            '⽼': '老',  // già
-            '⽽': '而',  // mà
-            '⽿': '耳',  // tai
-            '⾁': '肉',  // thịt
-            '⾂': '臣',  // thần
-            '⾃': '自',  // tự
-            '⾄': '至',  // đến
-            '⾆': '舌',  // lưỡi
-            '⾈': '舟',  // thuyền
-            '⾊': '色',  // màu
-            '⾍': '虫',  // côn trúng
-            '⾎': '血',  // máu
-            '⾏': '行',  // hành
-            '⾐': '衣',  // quần áo
-            '⾓': '角',  // góc
-            '⾔': '言',  // nói
-            '⾕': '谷',  // thung lũng
-            '⾖': '豆',  // đậu
-            '⾙': '贝',  // vỏ sò
-            '⾚': '赤',  // đỏ
-            '⾛': '走',  // chạy
-            '⾜': '足',  // chân
-            '⾝': '身',  // thân
-            '⾞': '车',  // xe
-            '⾟': '辛',  // cay
-            '⾨': '门',  // cửa
-            '⾦': '金',  // vàng
-            '⾧': '长',  // dài
-            '⾬': '雨',  // mưa
-            '⾮': '非',  // phi
-            '⾯': '面',  // mặt
-            '⾷': '食',  // ăn
-            '⾸': '首',  // đầu
-            '⾹': '香',  // thơm
-            '⾻': '骨',  // xương
-            '⾼': '高',  // cao
-            '⾥': '里',  // trong/dặm
-            '⽆': '无',  // không có
-            '⻢': '马',   // mã
-            
-            // Một số ký tự khác thường gặp
-            '⻅': '见',  // thấy
-            '⻆': '角',  // góc  
-            
-        };
-        
-        function fixText() {
-            const input = document.getElementById('input').value;
-            const output = document.getElementById('output');
-            const status = document.getElementById('status');
-            const changesLog = document.getElementById('changes-log');
-            const changesContent = document.getElementById('changes-content');
-            
-            if (!input.trim()) {
-                showStatus('Vui lòng nhập văn bản cần sửa!', 'info');
-                changesLog.style.display = 'none';
-                return;
-            }
-            
-            let fixedText = input;
-            let changesCount = 0;
-            let changesList = [];
-            
-            // BƯỚC 1: Xóa ký tự thừa theo regex (sẽ hiển thị ở đầu)
-            const removeRegex = /[TtŤťṪṫṬṭṮṯṰṱŢţẗŦŧƭƬȚțŤťṬṭṰṱ][UuÚúÙùÛûÜüŨũŪūŬŭŮůŲųỤụỦủṲṳṴṵṶṷṸṹṺṻŰűŮůū́ŭų][\u0300-\u036F]*[\u2070-\u209F₀-₉ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥwₓᵧᶻ⁰-⁹¹²³⁴⁵⁶⁷⁸⁹ᵃ-ᶻ⁺⁻⁼⁽⁾₊₋₌₍₎]+/g;
-            
-            let match;
-            let tempText = input;
-            let removedCount = 0;
-            
-            // Tìm và ghi lại tất cả ký tự thừa trước khi xóa
-            while ((match = removeRegex.exec(input)) !== null) {
-                removedCount++;
-                
-                // Tính vị trí
-                const beforeMatch = input.substring(0, match.index);
-                const lineNumber = beforeMatch.split('\n').length;
-                const lineStart = beforeMatch.lastIndexOf('\n') + 1;
-                const columnNumber = match.index - lineStart + 1;
-                
-                // Context
-                const start = Math.max(0, match.index - 5);
-                const end = Math.min(input.length, match.index + match[0].length + 5);
-                const context = input.substring(start, end);
-                const contextHighlighted = context.replace(match[0], `<mark style="background: #ff5722; color: white; font-weight: bold;">${match[0]}</mark>`);
-                
-                changesList.push({
-                    type: 'remove',
-                    broken: match[0],
-                    correct: '[XÓA]',
-                    line: lineNumber,
-                    column: columnNumber,
-                    context: contextHighlighted,
-                    position: match.index
-                });
-                
-                removeRegex.lastIndex = match.index + 1;
-            }
-            
-            // Thực hiện xóa ký tự thừa
-            fixedText = fixedText.replace(removeRegex, '');
-            changesCount += removedCount;
-            
-            // BƯỚC 2: Thay thế các ký tự bị lỗi encoding
-            for (const [broken, correct] of Object.entries(charMap)) {
-                const regex = new RegExp(broken, 'g');
-                let matchChar;
-                
-                // Tìm trong văn bản đã xóa ký tự thừa
-                while ((matchChar = regex.exec(fixedText)) !== null) {
-                    changesCount++;
-                    
-                    // Tính vị trí (cần tính lại do đã xóa ký tự thừa)
-                    const beforeMatch = fixedText.substring(0, matchChar.index);
-                    const lineNumber = beforeMatch.split('\n').length;
-                    const lineStart = beforeMatch.lastIndexOf('\n') + 1;
-                    const columnNumber = matchChar.index - lineStart + 1;
-                    
-                    // Context trong văn bản đã xóa ký tự thừa
-                    const start = Math.max(0, matchChar.index - 5);
-                    const end = Math.min(fixedText.length, matchChar.index + 6);
-                    const context = fixedText.substring(start, end);
-                    const contextHighlighted = context.replace(broken, `<mark style="background: #ffeb3b; color: #d32f2f; font-weight: bold;">${broken}</mark>`);
-                    
-                    changesList.push({
-                        type: 'replace',
-                        broken: broken,
-                        correct: correct,
-                        line: lineNumber,
-                        column: columnNumber,
-                        context: contextHighlighted,
-                        position: matchChar.index
-                    });
-                    
-                    regex.lastIndex = matchChar.index + 1;
-                }
-                
-                // Thực hiện thay thế
-                fixedText = fixedText.replace(new RegExp(broken, 'g'), correct);
-            }
-            
-            output.value = fixedText;
-            
-            if (changesCount > 0) {
-                // Sắp xếp: ký tự bị xóa trước, ký tự thay thế sau
-                changesList.sort((a, b) => {
-                    if (a.type !== b.type) {
-                        return a.type === 'remove' ? -1 : 1;
-                    }
-                    return a.position - b.position;
-                });
-                
-                // Hiển thị chi tiết thay đổi
-                let changesHtml = `<div style="margin-bottom: 10px;"><strong>🔄 Tổng cộng: ${changesCount} thay đổi (${removedCount} xóa, ${changesCount - removedCount} thay thế)</strong></div>`;
-                
-                changesList.forEach((change, index) => {
-                    const isRemove = change.type === 'remove';
-                    const bgColor = isRemove ? '#ffebee' : '#e3f2fd';
-                    const borderColor = isRemove ? '#f44336' : '#667eea';
-                    const actionIcon = isRemove ? '🗑️' : '🔄';
-                    
-                    changesHtml += `
-                        <div style="border-left: 3px solid ${borderColor}; padding-left: 10px; margin-bottom: 10px; background: ${bgColor}; border-radius: 0 5px 5px 0;">
-                            <div style="color: #666; font-size: 12px; margin-bottom: 5px;">
-                                ${actionIcon} #${index + 1} • Dòng ${change.line}, cột ${change.column} • Vị trí ${change.position}
-                            </div>
-                            <div style="margin-bottom: 5px;">
-                                <span style="color: ${isRemove ? '#d32f2f' : '#d32f2f'}; background: ${isRemove ? '#ffcdd2' : '#ffebee'}; padding: 2px 6px; border-radius: 3px; font-weight: bold;">${change.broken}</span>
-                                <span style="margin: 0 8px; color: #666;">→</span>
-                                <span style="color: ${isRemove ? '#d32f2f' : '#2e7d32'}; background: ${isRemove ? '#ffcdd2' : '#e8f5e8'}; padding: 2px 6px; border-radius: 3px; font-weight: bold;">${change.correct}</span>
-                            </div>
-                            <div style="color: #555; font-size: 13px;">
-                                <strong>Context:</strong> ${change.context}
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                changesContent.innerHTML = changesHtml;
-                changesLog.style.display = 'block';
-                
-                showStatus(`✅ Đã xử lý ${changesCount} thay đổi (${removedCount} xóa ký tự thừa, ${changesCount - removedCount} sửa encoding)!`, 'success');
-            } else {
-                changesLog.style.display = 'none';
-                showStatus('ℹ️ Không tìm thấy ký tự nào cần sửa.', 'info');
-            }
-        }
-        
-        function clearText() {
-            document.getElementById('input').value = '';
-            document.getElementById('output').value = '';
-            document.getElementById('status').innerHTML = '';
-            document.getElementById('changes-log').style.display = 'none';
-        }
-        
-        function copyResult() {
-            const output = document.getElementById('output');
-            if (!output.value.trim()) {
-                showStatus('Không có nội dung để copy!', 'info');
-                return;
-            }
-            
-            output.select();
-            output.setSelectionRange(0, 99999);
-            
-            try {
-                document.execCommand('copy');
-                showStatus('📋 Đã copy kết quả vào clipboard!', 'success');
-            } catch (err) {
-                // Fallback cho các trình duyệt hiện đại
-                navigator.clipboard.writeText(output.value).then(() => {
-                    showStatus('📋 Đã copy kết quả vào clipboard!', 'success');
-                }).catch(() => {
-                    showStatus('❌ Không thể copy. Vui lòng copy thủ công.', 'info');
-                });
-            }
-        }
-        
-        function showStatus(message, type) {
-            const status = document.getElementById('status');
-            status.innerHTML = message;
-            status.className = `status ${type}`;
-            
-            // Tự động ẩn sau 3 giây
-            setTimeout(() => {
-                status.innerHTML = '';
-                status.className = '';
-            }, 3000);
-        }
-        
-        // Tự động sửa khi người dùng nhập
-        document.getElementById('input').addEventListener('input', function() {
-            // Debounce để tránh xử lý quá nhiều
-            clearTimeout(this.timeout);
-            this.timeout = setTimeout(() => {
-                if (this.value.trim()) {
-                    fixText();
-                }
-            }, 500);
-        });
-    </script>
-</body>
-</html>
+            '⽋': '欠',  // thiếu
+            '⽌': '止',  // dừng
+            '⽍
