@@ -2,8 +2,8 @@
 // @name         Upload Multiple Files for Wiki
 // @namespace    http://tampermonkey.net/
 // @version      2.0
-// @updateURL    https://raw.githubusercontent.com/giaays/repo/main/Upload_wiki.user.js
-// @downloadURL  https://raw.githubusercontent.com/giaays/repo/main/Upload_wiki.user.js
+// @updateURL    https://raw.githubusercontent.com/giaays/Get-name-Wiki/main/Upload_wiki.user.js
+// @downloadURL  https://raw.githubusercontent.com/giaays/Get-name-Wiki/main/Upload_wiki.user.js
 // @description  Tự động upload file txt và điền tên chương
 // @match        *://*/nhung-file*
 // @grant        none
