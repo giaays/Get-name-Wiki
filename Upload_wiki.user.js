@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Upload Multiple Files for Wiki
 // @namespace    http://tampermonkey.net/
-// @version      2.0
+// @version      2.0.1
 // @author       giaays
 // @updateURL    https://raw.githubusercontent.com/giaays/Get-name-Wiki/main/Upload_wiki.user.js
 // @downloadURL  https://raw.githubusercontent.com/giaays/Get-name-Wiki/main/Upload_wiki.user.js
@@ -14,31 +14,42 @@
 (function() {
     'use strict';
 
-    let isMinimized = false;
+    let isMinimized = true;
+    let isDragging = false;
+    let currentX;
+    let currentY;
+    let initialX;
+    let initialY;
+    let xOffset = 0;
+    let yOffset = 0;
 
     const controlPanel = document.createElement('div');
     controlPanel.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
-        background: #ffffff;
-        padding: 24px;
-        border-radius: 12px;
+        background: #2c3e50;
+        padding: 0;
+        border-radius: 50%;
         z-index: 10000;
         box-shadow: 0 4px 6px rgba(0,0,0,0.07), 0 10px 20px rgba(0,0,0,0.1);
-        min-width: 320px;
-        max-width: 360px;
+        width: 56px;
+        height: 56px;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        border: 1px solid rgba(0,0,0,0.08);
+        border: none;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: move;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     `;
-
+    
     const titleWrapper = document.createElement('div');
-    titleWrapper.style.cssText = 'display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e9ecef;';
-
+    titleWrapper.style.cssText = 'display: none; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e9ecef;';
+    
     const titleLeft = document.createElement('div');
     titleLeft.style.cssText = 'display: flex; align-items: center; gap: 10px;';
-
+    
     const titleIcon = document.createElement('div');
     titleIcon.innerHTML = `
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#495057" stroke-width="2">
@@ -46,40 +57,52 @@
         </svg>
     `;
     titleLeft.appendChild(titleIcon);
-
+    
     const title = document.createElement('div');
     title.textContent = 'Auto Upload';
     title.style.cssText = 'color: #212529; font-size: 18px; font-weight: 600;';
     titleLeft.appendChild(title);
     titleWrapper.appendChild(titleLeft);
-
+    
     const minimizeBtn = document.createElement('button');
     minimizeBtn.innerHTML = `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#495057" stroke-width="2">
-            <polyline points="18 15 12 9 6 15"></polyline>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
         </svg>
     `;
     minimizeBtn.style.cssText = `
         background: transparent;
         border: none;
-        width: 32px;
-        height: 32px;
-        border-radius: 6px;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: all 0.2s;
     `;
-    minimizeBtn.onmouseover = () => minimizeBtn.style.background = '#f8f9fa';
-    minimizeBtn.onmouseout = () => minimizeBtn.style.background = 'transparent';
+    minimizeBtn.onmouseover = () => {
+        if (isMinimized) {
+            controlPanel.style.transform = 'scale(1.1)';
+        } else {
+            minimizeBtn.style.background = '#f8f9fa';
+        }
+    };
+    minimizeBtn.onmouseout = () => {
+        if (isMinimized) {
+            controlPanel.style.transform = 'scale(1)';
+        } else {
+            minimizeBtn.style.background = 'transparent';
+        }
+    };
     titleWrapper.appendChild(minimizeBtn);
     controlPanel.appendChild(titleWrapper);
-
+    
     const contentWrapper = document.createElement('div');
     contentWrapper.id = 'autoUploadContent';
-    contentWrapper.style.cssText = 'transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);';
-
+    contentWrapper.style.cssText = 'transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: none;';
+    
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.id = 'autoUploadFileInput';
@@ -87,7 +110,7 @@
     fileInput.accept = '.txt';
     fileInput.style.display = 'none';
     contentWrapper.appendChild(fileInput);
-
+    
     const fileLabel = document.createElement('label');
     fileLabel.setAttribute('for', 'autoUploadFileInput');
     fileLabel.style.cssText = `
@@ -108,7 +131,7 @@
         border: 2px dashed #dee2e6;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     `;
-
+    
     const fileIcon = document.createElement('span');
     fileIcon.innerHTML = `
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -117,11 +140,11 @@
         </svg>
     `;
     fileLabel.appendChild(fileIcon);
-
+    
     const fileLabelText = document.createElement('span');
     fileLabelText.textContent = 'Chọn file';
     fileLabel.appendChild(fileLabelText);
-
+    
     fileLabel.onmouseover = () => {
         fileLabel.style.background = '#f8f9fa';
         fileLabel.style.borderColor = '#adb5bd';
@@ -135,20 +158,20 @@
         fileLabel.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
     };
     contentWrapper.appendChild(fileLabel);
-
+    
     const fileCountDiv = document.createElement('div');
     fileCountDiv.id = 'autoUploadFileCount';
     fileCountDiv.style.cssText = 'color: #6c757d; font-size: 13px; margin-top: 8px; margin-bottom: 12px; min-height: 0; display: none; padding-left: 4px;';
     contentWrapper.appendChild(fileCountDiv);
-
+    
     const checkboxWrapper = document.createElement('div');
     checkboxWrapper.style.cssText = `
         margin-top: 12px;
         margin-bottom: 16px;
-        padding: 12px;
-        background: #ffffff;
-        border-radius: 8px;
-        border: 1px solid #dee2e6;
+        padding: 12px; 
+        background: #ffffff; 
+        border-radius: 8px; 
+        border: 1px solid #dee2e6; 
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -156,7 +179,7 @@
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         transition: all 0.2s;
     `;
-
+    
     checkboxWrapper.onmouseover = () => {
         checkboxWrapper.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)';
         checkboxWrapper.style.borderColor = '#adb5bd';
@@ -165,9 +188,9 @@
         checkboxWrapper.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
         checkboxWrapper.style.borderColor = '#dee2e6';
     };
-
+    
     let isChecked = true;
-
+    
     const customCheckbox = document.createElement('div');
     customCheckbox.style.cssText = `
         width: 20px;
@@ -182,7 +205,7 @@
         transition: all 0.15s;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     `;
-
+    
     const checkmark = document.createElement('div');
     checkmark.innerHTML = `
         <svg width="14" height="14" viewBox="0 0 16 16" fill="white" stroke="white" stroke-width="1">
@@ -191,14 +214,14 @@
     `;
     checkmark.style.cssText = 'display: flex; align-items: center; justify-content: center;';
     customCheckbox.appendChild(checkmark);
-
+    
     const checkboxText = document.createElement('span');
     checkboxText.textContent = 'Xóa mô tả sau dấu (-)';
     checkboxText.style.cssText = 'color: #495057; font-size: 14px; flex: 1;';
-
+    
     checkboxWrapper.appendChild(customCheckbox);
     checkboxWrapper.appendChild(checkboxText);
-
+    
     checkboxWrapper.onclick = () => {
         isChecked = !isChecked;
         if (isChecked) {
@@ -211,9 +234,9 @@
             checkmark.style.display = 'none';
         }
     };
-
+    
     contentWrapper.appendChild(checkboxWrapper);
-
+    
     const uploadBtn = document.createElement('button');
     uploadBtn.id = 'autoUploadStartBtn';
     uploadBtn.style.cssText = `
@@ -233,7 +256,7 @@
         justify-content: center;
         gap: 8px;
     `;
-
+    
     const uploadIcon = document.createElement('span');
     uploadIcon.innerHTML = `
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -241,11 +264,11 @@
         </svg>
     `;
     uploadBtn.appendChild(uploadIcon);
-
+    
     const uploadBtnText = document.createElement('span');
     uploadBtnText.textContent = 'Bắt đầu upload';
     uploadBtn.appendChild(uploadBtnText);
-
+    
     uploadBtn.onmouseover = () => {
         uploadBtn.style.background = '#218838';
         uploadBtn.style.transform = 'translateY(-2px)';
@@ -257,7 +280,7 @@
         uploadBtn.style.boxShadow = '0 2px 4px rgba(40,167,69,0.3), 0 4px 8px rgba(0,0,0,0.1)';
     };
     contentWrapper.appendChild(uploadBtn);
-
+    
     const statusDiv = document.createElement('div');
     statusDiv.id = 'autoUploadStatus';
     statusDiv.style.cssText = `
@@ -275,16 +298,59 @@
         box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
     `;
     contentWrapper.appendChild(statusDiv);
-
+    
     controlPanel.appendChild(contentWrapper);
     document.body.appendChild(controlPanel);
 
-    minimizeBtn.onclick = () => {
+    controlPanel.addEventListener('mousedown', dragStart);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', dragEnd);
+
+    function dragStart(e) {
+        if (e.target === minimizeBtn || e.target.closest('button') === minimizeBtn) {
+            return;
+        }
+        
+        initialX = e.clientX - xOffset;
+        initialY = e.clientY - yOffset;
+
+        if (e.target === controlPanel || e.target === titleWrapper || e.target.closest('#autoUploadContent') === null) {
+            isDragging = true;
+            controlPanel.style.cursor = 'grabbing';
+        }
+    }
+
+    function drag(e) {
+        if (isDragging) {
+            e.preventDefault();
+            currentX = e.clientX - initialX;
+            currentY = e.clientY - initialY;
+            xOffset = currentX;
+            yOffset = currentY;
+            
+            setTranslate(currentX, currentY, controlPanel);
+        }
+    }
+
+    function dragEnd(e) {
+        initialX = currentX;
+        initialY = currentY;
+        isDragging = false;
+        controlPanel.style.cursor = 'move';
+    }
+
+    function setTranslate(xPos, yPos, el) {
+        el.style.transform = `translate3d(${xPos}px, ${yPos}px, 0)`;
+    }
+
+    minimizeBtn.onclick = (e) => {
+        e.stopPropagation();
         isMinimized = !isMinimized;
         if (isMinimized) {
             contentWrapper.style.display = 'none';
             title.style.display = 'none';
             titleLeft.style.display = 'none';
+            titleWrapper.style.display = 'none';
             titleWrapper.style.marginBottom = '0';
             titleWrapper.style.paddingBottom = '0';
             titleWrapper.style.borderBottom = 'none';
@@ -303,6 +369,7 @@
             minimizeBtn.style.background = 'transparent';
             minimizeBtn.style.width = '100%';
             minimizeBtn.style.height = '100%';
+            minimizeBtn.style.borderRadius = '50%';
             minimizeBtn.innerHTML = `
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
                     <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
@@ -312,6 +379,7 @@
             contentWrapper.style.display = 'block';
             title.style.display = 'block';
             titleLeft.style.display = 'flex';
+            titleWrapper.style.display = 'flex';
             titleWrapper.style.marginBottom = '20px';
             titleWrapper.style.paddingBottom = '16px';
             titleWrapper.style.borderBottom = '2px solid #e9ecef';
@@ -327,6 +395,7 @@
             controlPanel.style.border = '1px solid rgba(0,0,0,0.08)';
             minimizeBtn.style.width = '32px';
             minimizeBtn.style.height = '32px';
+            minimizeBtn.style.borderRadius = '6px';
             minimizeBtn.innerHTML = `
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#495057" stroke-width="2">
                     <polyline points="18 15 12 9 6 15"></polyline>
@@ -341,14 +410,14 @@
             reader.onload = (e) => {
                 const text = e.target.result;
                 let firstLine = text.split('\n')[0].trim();
-
+                
                 if (isChecked) {
                     const dashIndex = firstLine.indexOf(' - ');
                     if (dashIndex !== -1) {
                         firstLine = firstLine.substring(0, dashIndex).trim();
                     }
                 }
-
+                
                 resolve(firstLine);
             };
             reader.readAsText(file, 'UTF-8');
@@ -358,7 +427,7 @@
     function findChapterForms() {
         const forms = [];
         const wrappers = document.querySelectorAll('.chapter-info-wrapper');
-
+        
         wrappers.forEach(wrapper => {
             const nameInput = wrapper.querySelector('input[name="name"][type="text"]');
             const fileInputElem = wrapper.querySelector('input[type="file"][name="file"]');
@@ -373,7 +442,7 @@
 
     async function uploadToForm(form, file) {
         const chapterName = await readFirstLine(file);
-
+        
         form.nameInput.value = chapterName;
         form.nameInput.dispatchEvent(new Event('input', { bubbles: true }));
         form.nameInput.dispatchEvent(new Event('change', { bubbles: true }));
