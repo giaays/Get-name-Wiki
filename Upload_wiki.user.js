@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Upload Multiple Files for Wiki
 // @namespace    http://tampermonkey.net/
-// @version      2.0.1
+// @version      2.0.2
 // @author       giaays
 // @updateURL    https://raw.githubusercontent.com/giaays/Get-name-Wiki/main/Upload_wiki.user.js
 // @downloadURL  https://raw.githubusercontent.com/giaays/Get-name-Wiki/main/Upload_wiki.user.js
@@ -15,55 +15,41 @@
     'use strict';
 
     let isMinimized = true;
-    let isDragging = false;
-    let currentX;
-    let currentY;
-    let initialX;
-    let initialY;
-    let xOffset = 0;
-    let yOffset = 0;
+
+    const minimizedWidth = 56;
+    const expandedMinWidth = 320;
+
+    // ĐIỀU CHỈNH VỊ TRÍ MẶC ĐỊNH SỬ DỤNG PHẦN TRĂM
+    const initialTop = '150px'; // Hoặc '20vh'
+    const initialRightPercent = '5%';
+
+    // Dùng JavaScript để tính toán vị trí Left ban đầu từ Right (phải làm điều này do chúng ta dùng đơn vị %)
+    const initialRightPixel = window.innerWidth * 0.05;
+    const initialLeft = window.innerWidth - minimizedWidth - initialRightPixel;
+
 
     const controlPanel = document.createElement('div');
     controlPanel.style.cssText = `
         position: fixed;
-        top: 20px;
-        right: 20px;
+        top: ${initialTop};
+        right: auto;
+        left: ${initialLeft}px;
         background: #2c3e50;
         padding: 0;
         border-radius: 50%;
         z-index: 10000;
         box-shadow: 0 4px 6px rgba(0,0,0,0.07), 0 10px 20px rgba(0,0,0,0.1);
-        width: 56px;
-        height: 56px;
+        width: ${minimizedWidth}px;
+        height: ${minimizedWidth}px;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         border: none;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.3s ease;
         cursor: move;
         display: flex;
         align-items: center;
         justify-content: center;
     `;
-    
-    const titleWrapper = document.createElement('div');
-    titleWrapper.style.cssText = 'display: none; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e9ecef;';
-    
-    const titleLeft = document.createElement('div');
-    titleLeft.style.cssText = 'display: flex; align-items: center; gap: 10px;';
-    
-    const titleIcon = document.createElement('div');
-    titleIcon.innerHTML = `
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#495057" stroke-width="2">
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
-        </svg>
-    `;
-    titleLeft.appendChild(titleIcon);
-    
-    const title = document.createElement('div');
-    title.textContent = 'Auto Upload';
-    title.style.cssText = 'color: #212529; font-size: 18px; font-weight: 600;';
-    titleLeft.appendChild(title);
-    titleWrapper.appendChild(titleLeft);
-    
+
     const minimizeBtn = document.createElement('button');
     minimizeBtn.innerHTML = `
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
@@ -73,36 +59,69 @@
     minimizeBtn.style.cssText = `
         background: transparent;
         border: none;
-        width: 100%;
-        height: 100%;
+        width: 56px;
+        height: 56px;
         border-radius: 50%;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: all 0.2s;
+        padding: 0;
+        margin: 0;
     `;
-    minimizeBtn.onmouseover = () => {
-        if (isMinimized) {
-            controlPanel.style.transform = 'scale(1.1)';
-        } else {
-            minimizeBtn.style.background = '#f8f9fa';
-        }
-    };
-    minimizeBtn.onmouseout = () => {
-        if (isMinimized) {
-            controlPanel.style.transform = 'scale(1)';
-        } else {
-            minimizeBtn.style.background = 'transparent';
-        }
-    };
-    titleWrapper.appendChild(minimizeBtn);
+    controlPanel.appendChild(minimizeBtn);
+
+    const titleWrapper = document.createElement('div');
+    titleWrapper.style.cssText = 'display: none; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e5e1da; width: 100%;';
+
+    const titleLeft = document.createElement('div');
+    titleLeft.style.cssText = 'display: flex; align-items: center; gap: 10px;';
+
+    const titleIcon = document.createElement('div');
+    titleIcon.innerHTML = `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#495057" stroke-width="2">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+        </svg>
+    `;
+    titleLeft.appendChild(titleIcon);
+
+    const title = document.createElement('div');
+    title.textContent = 'Auto Upload';
+    title.style.cssText = 'color: #212529; font-size: 18px; font-weight: 600;';
+    titleLeft.appendChild(title);
+
+    const minimizeBtnExpanded = document.createElement('button');
+    minimizeBtnExpanded.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#495057" stroke-width="2">
+            <polyline points="18 15 12 9 6 15"></polyline>
+        </svg>
+    `;
+    minimizeBtnExpanded.style.cssText = `
+        background: transparent;
+        border: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        padding: 0;
+        margin: 0;
+        flex-shrink: 0;
+    `;
+    minimizeBtnExpanded.onmouseover = () => { minimizeBtnExpanded.style.background = '#e5e1da'; };
+    minimizeBtnExpanded.onmouseout = () => { minimizeBtnExpanded.style.background = 'transparent'; };
+
+    titleWrapper.appendChild(titleLeft);
+    titleWrapper.appendChild(minimizeBtnExpanded);
     controlPanel.appendChild(titleWrapper);
-    
+
     const contentWrapper = document.createElement('div');
-    contentWrapper.id = 'autoUploadContent';
-    contentWrapper.style.cssText = 'transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: none;';
-    
+    contentWrapper.style.cssText = 'display: none; width: 100%;';
+
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.id = 'autoUploadFileInput';
@@ -110,7 +129,7 @@
     fileInput.accept = '.txt';
     fileInput.style.display = 'none';
     contentWrapper.appendChild(fileInput);
-    
+
     const fileLabel = document.createElement('label');
     fileLabel.setAttribute('for', 'autoUploadFileInput');
     fileLabel.style.cssText = `
@@ -128,50 +147,48 @@
         font-size: 14px;
         font-weight: 500;
         transition: all 0.2s;
-        border: 2px dashed #dee2e6;
+        border: 2px dashed #d6cfc4;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     `;
-    
-    const fileIcon = document.createElement('span');
-    fileIcon.innerHTML = `
+
+    const fileIconLabel = document.createElement('span');
+    fileIconLabel.innerHTML = `
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/>
             <polyline points="13 2 13 9 20 9"/>
         </svg>
     `;
-    fileLabel.appendChild(fileIcon);
-    
+    fileLabel.appendChild(fileIconLabel);
+
     const fileLabelText = document.createElement('span');
     fileLabelText.textContent = 'Chọn file';
     fileLabel.appendChild(fileLabelText);
-    
     fileLabel.onmouseover = () => {
-        fileLabel.style.background = '#f8f9fa';
-        fileLabel.style.borderColor = '#adb5bd';
+        fileLabel.style.background = '#fafaf8';
+        fileLabel.style.borderColor = '#b8ad9f';
         fileLabel.style.transform = 'translateY(-1px)';
         fileLabel.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
     };
     fileLabel.onmouseout = () => {
         fileLabel.style.background = '#ffffff';
-        fileLabel.style.borderColor = '#dee2e6';
+        fileLabel.style.borderColor = '#d6cfc4';
         fileLabel.style.transform = 'translateY(0)';
         fileLabel.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
     };
     contentWrapper.appendChild(fileLabel);
-    
+
     const fileCountDiv = document.createElement('div');
-    fileCountDiv.id = 'autoUploadFileCount';
-    fileCountDiv.style.cssText = 'color: #6c757d; font-size: 13px; margin-top: 8px; margin-bottom: 12px; min-height: 0; display: none; padding-left: 4px;';
+    fileCountDiv.style.cssText = 'color: #6c757d; font-size: 13px; margin-top: 8px; margin-bottom: 12px; display: none; padding-left: 4px;';
     contentWrapper.appendChild(fileCountDiv);
-    
+
     const checkboxWrapper = document.createElement('div');
     checkboxWrapper.style.cssText = `
         margin-top: 12px;
         margin-bottom: 16px;
-        padding: 12px; 
-        background: #ffffff; 
-        border-radius: 8px; 
-        border: 1px solid #dee2e6; 
+        padding: 12px;
+        background: #ffffff;
+        border-radius: 8px;
+        border: 1px solid #d6cfc4;
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -179,18 +196,18 @@
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         transition: all 0.2s;
     `;
-    
+
     checkboxWrapper.onmouseover = () => {
         checkboxWrapper.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)';
-        checkboxWrapper.style.borderColor = '#adb5bd';
+        checkboxWrapper.style.borderColor = '#b8ad9f';
     };
     checkboxWrapper.onmouseout = () => {
         checkboxWrapper.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
-        checkboxWrapper.style.borderColor = '#dee2e6';
+        checkboxWrapper.style.borderColor = '#d6cfc4';
     };
-    
+
     let isChecked = true;
-    
+
     const customCheckbox = document.createElement('div');
     customCheckbox.style.cssText = `
         width: 20px;
@@ -205,7 +222,6 @@
         transition: all 0.15s;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     `;
-    
     const checkmark = document.createElement('div');
     checkmark.innerHTML = `
         <svg width="14" height="14" viewBox="0 0 16 16" fill="white" stroke="white" stroke-width="1">
@@ -214,14 +230,13 @@
     `;
     checkmark.style.cssText = 'display: flex; align-items: center; justify-content: center;';
     customCheckbox.appendChild(checkmark);
-    
+
     const checkboxText = document.createElement('span');
     checkboxText.textContent = 'Xóa mô tả sau dấu (-)';
     checkboxText.style.cssText = 'color: #495057; font-size: 14px; flex: 1;';
-    
+
     checkboxWrapper.appendChild(customCheckbox);
     checkboxWrapper.appendChild(checkboxText);
-    
     checkboxWrapper.onclick = () => {
         isChecked = !isChecked;
         if (isChecked) {
@@ -230,15 +245,13 @@
             checkmark.style.display = 'flex';
         } else {
             customCheckbox.style.background = '#ffffff';
-            customCheckbox.style.borderColor = '#dee2e6';
+            customCheckbox.style.borderColor = '#d6cfc4';
             checkmark.style.display = 'none';
         }
     };
-    
     contentWrapper.appendChild(checkboxWrapper);
-    
+
     const uploadBtn = document.createElement('button');
-    uploadBtn.id = 'autoUploadStartBtn';
     uploadBtn.style.cssText = `
         background: #28a745;
         color: white;
@@ -256,19 +269,17 @@
         justify-content: center;
         gap: 8px;
     `;
-    
-    const uploadIcon = document.createElement('span');
-    uploadIcon.innerHTML = `
+    const uploadIconBtn = document.createElement('span');
+    uploadIconBtn.innerHTML = `
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 15v4c0 1.1.9 2 2 2h14a2 2 0 002-2v-4M17 8l-5-5-5 5M12 3v12"/>
         </svg>
     `;
-    uploadBtn.appendChild(uploadIcon);
-    
+    uploadBtn.appendChild(uploadIconBtn);
+
     const uploadBtnText = document.createElement('span');
     uploadBtnText.textContent = 'Bắt đầu upload';
     uploadBtn.appendChild(uploadBtnText);
-    
     uploadBtn.onmouseover = () => {
         uploadBtn.style.background = '#218838';
         uploadBtn.style.transform = 'translateY(-2px)';
@@ -280,9 +291,8 @@
         uploadBtn.style.boxShadow = '0 2px 4px rgba(40,167,69,0.3), 0 4px 8px rgba(0,0,0,0.1)';
     };
     contentWrapper.appendChild(uploadBtn);
-    
+
     const statusDiv = document.createElement('div');
-    statusDiv.id = 'autoUploadStatus';
     statusDiv.style.cssText = `
         margin-top: 16px;
         font-size: 12px;
@@ -292,98 +302,160 @@
         padding: 12px;
         background: #ffffff;
         border-radius: 8px;
-        border: 1px solid #dee2e6;
+        border: 1px solid #d6cfc4;
         display: none;
         line-height: 1.6;
         box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
     `;
     contentWrapper.appendChild(statusDiv);
-    
+
     controlPanel.appendChild(contentWrapper);
     document.body.appendChild(controlPanel);
 
-    controlPanel.addEventListener('mousedown', dragStart);
-    document.addEventListener('mousemove', drag);
-    document.addEventListener('mouseup', dragEnd);
+    // --- LOGIC KÉO THẢ ---
+    let dragStartX, dragStartY, panelStartX, panelStartY, isDragging = false;
+    let wasDragging = false;
 
-    function dragStart(e) {
-        if (e.target === minimizeBtn || e.target.closest('button') === minimizeBtn) {
+    controlPanel.addEventListener('mousedown', (e) => {
+        if (!isMinimized && (e.target.closest('input') || e.target.closest('label') || e.target.closest('button'))) {
             return;
         }
-        
-        initialX = e.clientX - xOffset;
-        initialY = e.clientY - yOffset;
 
-        if (e.target === controlPanel || e.target === titleWrapper || e.target.closest('#autoUploadContent') === null) {
-            isDragging = true;
-            controlPanel.style.cursor = 'grabbing';
+        isDragging = true;
+        wasDragging = false;
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+
+        const rect = controlPanel.getBoundingClientRect();
+        panelStartX = rect.left;
+        panelStartY = rect.top;
+
+        controlPanel.style.cursor = 'grabbing';
+        controlPanel.style.transition = 'none';
+
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+
+        const deltaX = e.clientX - dragStartX;
+        const deltaY = e.clientY - dragStartY;
+
+        // Chỉ coi là đang kéo nếu di chuyển đủ xa
+        if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+            wasDragging = true;
         }
-    }
 
-    function drag(e) {
+        let newX = panelStartX + deltaX;
+        let newY = panelStartY + deltaY;
+
+        const rect = controlPanel.getBoundingClientRect();
+        // Giữ khoảng cách tối thiểu 20px từ mép
+        const maxX = window.innerWidth - rect.width - 20;
+        const maxY = window.innerHeight - rect.height - 20;
+
+        newX = Math.max(20, Math.min(newX, maxX));
+        newY = Math.max(20, Math.min(newY, maxY));
+
+        controlPanel.style.left = newX + 'px';
+        controlPanel.style.top = newY + 'px';
+        controlPanel.style.right = 'auto'; // Luôn dùng Left/Top khi kéo thả
+    });
+
+    document.addEventListener('mouseup', () => {
         if (isDragging) {
-            e.preventDefault();
-            currentX = e.clientX - initialX;
-            currentY = e.clientY - initialY;
-            xOffset = currentX;
-            yOffset = currentY;
-            
-            setTranslate(currentX, currentY, controlPanel);
+            isDragging = false;
+            controlPanel.style.cursor = 'move';
+            controlPanel.style.transition = 'all 0.3s ease';
         }
-    }
+    });
 
-    function dragEnd(e) {
-        initialX = currentX;
-        initialY = currentY;
-        isDragging = false;
-        controlPanel.style.cursor = 'move';
-    }
+    // Cần cập nhật lại vị trí khi thay đổi kích thước màn hình để giữ đúng vị trí ban đầu (initialRightPercent)
+    window.addEventListener('resize', () => {
+        // Nếu đang ở trạng thái thu gọn và chưa kéo thả
+        if (isMinimized && !wasDragging) {
+             const newRightPixel = window.innerWidth * 0.05;
+             const newLeft = window.innerWidth - minimizedWidth - newRightPixel;
+             controlPanel.style.left = newLeft + 'px';
+             // Top vẫn giữ nguyên theo pixel cố định (150px)
+        } else if (!isMinimized) {
+            // Khi mở rộng, cần đảm bảo panel không bị tràn ra ngoài
+            const rect = controlPanel.getBoundingClientRect();
+            let left = rect.left;
+            let top = rect.top;
 
-    function setTranslate(xPos, yPos, el) {
-        el.style.transform = `translate3d(${xPos}px, ${yPos}px, 0)`;
-    }
+            const maxX = window.innerWidth - rect.width - 20;
+            const maxY = window.innerHeight - rect.height - 20;
 
-    minimizeBtn.onclick = (e) => {
-        e.stopPropagation();
+            left = Math.max(20, Math.min(left, maxX));
+            top = Math.max(20, Math.min(top, maxY));
+
+            controlPanel.style.left = left + 'px';
+            controlPanel.style.top = top + 'px';
+        }
+    });
+
+
+    const togglePanel = () => {
+        // CHẶN MỞ PANEL NẾU VỪA KÉO THẢ
+        if (isMinimized && wasDragging) {
+            wasDragging = false;
+            return;
+        }
+
         isMinimized = !isMinimized;
+
+        const rect = controlPanel.getBoundingClientRect();
+        let currentLeft = rect.left;
+        let currentTop = rect.top;
+
+        controlPanel.style.transition = 'none';
+
         if (isMinimized) {
-            contentWrapper.style.display = 'none';
-            title.style.display = 'none';
-            titleLeft.style.display = 'none';
+            const oldWidth = rect.width;
+
             titleWrapper.style.display = 'none';
-            titleWrapper.style.marginBottom = '0';
-            titleWrapper.style.paddingBottom = '0';
-            titleWrapper.style.borderBottom = 'none';
-            titleWrapper.style.justifyContent = 'center';
-            controlPanel.style.minWidth = 'auto';
-            controlPanel.style.maxWidth = 'auto';
+            contentWrapper.style.display = 'none';
+            controlPanel.style.display = 'flex';
+            controlPanel.style.flexDirection = 'row';
+
+            controlPanel.style.minWidth = '56px';
+            controlPanel.style.maxWidth = '56px';
             controlPanel.style.padding = '0';
             controlPanel.style.background = '#2c3e50';
             controlPanel.style.borderRadius = '50%';
             controlPanel.style.width = '56px';
             controlPanel.style.height = '56px';
-            controlPanel.style.display = 'flex';
-            controlPanel.style.alignItems = 'center';
-            controlPanel.style.justifyContent = 'center';
             controlPanel.style.border = 'none';
-            minimizeBtn.style.background = 'transparent';
-            minimizeBtn.style.width = '100%';
-            minimizeBtn.style.height = '100%';
-            minimizeBtn.style.borderRadius = '50%';
-            minimizeBtn.innerHTML = `
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
-                </svg>
-            `;
+
+            minimizeBtn.style.display = 'flex';
+
+            // ĐIỀU CHỈNH VỊ TRÍ KHI THU GỌN: Để icon dính vào góc phải của vị trí mở rộng cũ
+            const deltaX = (oldWidth - minimizedWidth);
+            currentLeft = currentLeft + deltaX;
+
+            const maxX = window.innerWidth - 56 - 20;
+            const maxY = window.innerHeight - 56 - 20;
+            currentLeft = Math.max(20, Math.min(currentLeft, maxX));
+            currentTop = Math.max(20, Math.min(currentTop, maxY));
+
+            controlPanel.style.left = currentLeft + 'px';
+            controlPanel.style.top = currentTop + 'px';
+            controlPanel.style.right = 'auto'; // Luôn set 'auto' khi dùng left/top
+
+            setTimeout(() => {
+                controlPanel.style.transition = 'all 0.3s ease';
+            }, 50);
+
         } else {
-            contentWrapper.style.display = 'block';
-            title.style.display = 'block';
-            titleLeft.style.display = 'flex';
-            titleWrapper.style.display = 'flex';
-            titleWrapper.style.marginBottom = '20px';
-            titleWrapper.style.paddingBottom = '16px';
-            titleWrapper.style.borderBottom = '2px solid #e9ecef';
-            titleWrapper.style.justifyContent = 'space-between';
+            // Lấy kích thước hiện tại (56px)
+            const currentLeftBeforeExpand = currentLeft;
+
+            // Thiết lập cho trạng thái mở rộng
+            controlPanel.style.display = 'flex';
+            controlPanel.style.flexDirection = 'column';
+
             controlPanel.style.minWidth = '320px';
             controlPanel.style.maxWidth = '360px';
             controlPanel.style.padding = '24px';
@@ -391,18 +463,43 @@
             controlPanel.style.borderRadius = '12px';
             controlPanel.style.width = 'auto';
             controlPanel.style.height = 'auto';
-            controlPanel.style.display = 'block';
             controlPanel.style.border = '1px solid rgba(0,0,0,0.08)';
-            minimizeBtn.style.width = '32px';
-            minimizeBtn.style.height = '32px';
-            minimizeBtn.style.borderRadius = '6px';
-            minimizeBtn.innerHTML = `
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#495057" stroke-width="2">
-                    <polyline points="18 15 12 9 6 15"></polyline>
-                </svg>
-            `;
+
+            minimizeBtn.style.display = 'none';
+            titleWrapper.style.display = 'flex';
+            contentWrapper.style.display = 'block';
+
+            // ĐIỀU CHỈNH VỊ TRÍ KHI MỞ RỘNG: Dịch sang trái một đoạn bằng (expandedMinWidth - minimizedWidth) để mở rộng từ góc phải
+            const deltaX = (expandedMinWidth - minimizedWidth);
+            currentLeft = currentLeftBeforeExpand - deltaX;
+
+            setTimeout(() => {
+                const newRect = controlPanel.getBoundingClientRect();
+                const maxX = window.innerWidth - newRect.width - 20;
+                const maxY = window.innerHeight - newRect.height - 20;
+
+                currentLeft = Math.max(20, Math.min(currentLeft, maxX));
+                currentTop = Math.max(20, Math.min(currentTop, maxY));
+
+                controlPanel.style.left = currentLeft + 'px';
+                controlPanel.style.top = currentTop + 'px';
+                controlPanel.style.right = 'auto'; // Luôn set 'auto' khi dùng left/top
+                controlPanel.style.transition = 'all 0.3s ease';
+            }, 10);
         }
+        if (wasDragging) wasDragging = false;
     };
+
+    minimizeBtn.onclick = (e) => {
+        e.stopPropagation();
+        togglePanel();
+    };
+    minimizeBtnExpanded.onclick = (e) => {
+        e.stopPropagation();
+        togglePanel();
+    };
+
+    // --- LOGIC XỬ LÝ FILE (GIỮ NGUYÊN) ---
 
     async function readFirstLine(file) {
         return new Promise((resolve) => {
@@ -410,14 +507,14 @@
             reader.onload = (e) => {
                 const text = e.target.result;
                 let firstLine = text.split('\n')[0].trim();
-                
+
                 if (isChecked) {
                     const dashIndex = firstLine.indexOf(' - ');
                     if (dashIndex !== -1) {
                         firstLine = firstLine.substring(0, dashIndex).trim();
                     }
                 }
-                
+
                 resolve(firstLine);
             };
             reader.readAsText(file, 'UTF-8');
@@ -427,7 +524,7 @@
     function findChapterForms() {
         const forms = [];
         const wrappers = document.querySelectorAll('.chapter-info-wrapper');
-        
+
         wrappers.forEach(wrapper => {
             const nameInput = wrapper.querySelector('input[name="name"][type="text"]');
             const fileInputElem = wrapper.querySelector('input[type="file"][name="file"]');
@@ -436,13 +533,11 @@
                 forms.push({ nameInput, fileInput: fileInputElem });
             }
         });
-
         return forms;
     }
 
     async function uploadToForm(form, file) {
         const chapterName = await readFirstLine(file);
-        
         form.nameInput.value = chapterName;
         form.nameInput.dispatchEvent(new Event('input', { bubbles: true }));
         form.nameInput.dispatchEvent(new Event('change', { bubbles: true }));
@@ -469,7 +564,6 @@
             fileCountDiv.style.display = 'none';
         }
     });
-
     uploadBtn.addEventListener('click', async () => {
         const files = Array.from(fileInput.files);
         if (files.length === 0) {
@@ -490,10 +584,12 @@
         statusDiv.style.display = 'block';
         statusDiv.innerHTML = `<strong>Đang upload ${files.length} file...</strong><br><br>`;
 
+
         for (let i = 0; i < Math.min(files.length, forms.length); i++) {
             try {
                 const chapterName = await uploadToForm(forms[i], files[i]);
-                const displayName = chapterName.length > 40 ? chapterName.substring(0, 40) + '...' : chapterName;
+                const displayName = chapterName.length > 40 ?
+                    chapterName.substring(0, 40) + '...' : chapterName;
                 statusDiv.innerHTML += `<span style="color: #28a745;">✓</span> ${i + 1}. ${displayName}<br>`;
                 await new Promise(resolve => setTimeout(resolve, 300));
             } catch (error) {
