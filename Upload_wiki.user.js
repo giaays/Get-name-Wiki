@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Upload Multiple Files for Wiki
 // @namespace    http://tampermonkey.net/
-// @version      2.0.2
+// @version      2.0.3
 // @author       giaays
 // @updateURL    https://raw.githubusercontent.com/giaays/Get-name-Wiki/main/Upload_wiki.user.js
 // @downloadURL  https://raw.githubusercontent.com/giaays/Get-name-Wiki/main/Upload_wiki.user.js
@@ -19,11 +19,9 @@
     const minimizedWidth = 56;
     const expandedMinWidth = 320;
 
-    // ĐIỀU CHỈNH VỊ TRÍ MẶC ĐỊNH SỬ DỤNG PHẦN TRĂM
-    const initialTop = '150px'; // Hoặc '20vh'
+    const initialTop = '150px';
     const initialRightPercent = '5%';
 
-    // Dùng JavaScript để tính toán vị trí Left ban đầu từ Right (phải làm điều này do chúng ta dùng đơn vị %)
     const initialRightPixel = window.innerWidth * 0.05;
     const initialLeft = window.innerWidth - minimizedWidth - initialRightPixel;
 
@@ -71,7 +69,6 @@
         margin: 0;
     `;
     controlPanel.appendChild(minimizeBtn);
-
     const titleWrapper = document.createElement('div');
     titleWrapper.style.cssText = 'display: none; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e5e1da; width: 100%;';
 
@@ -90,7 +87,6 @@
     title.textContent = 'Auto Upload';
     title.style.cssText = 'color: #212529; font-size: 18px; font-weight: 600;';
     titleLeft.appendChild(title);
-
     const minimizeBtnExpanded = document.createElement('button');
     minimizeBtnExpanded.innerHTML = `
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#495057" stroke-width="2">
@@ -292,9 +288,24 @@
     };
     contentWrapper.appendChild(uploadBtn);
 
+    const progressDiv = document.createElement('div');
+    progressDiv.style.cssText = `
+        margin-top: 16px;
+        font-size: 13px;
+        color: #495057;
+        background: #ffffff;
+        border-radius: 8px;
+        border: 1px solid #d6cfc4;
+        display: none;
+        padding: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+    `;
+    contentWrapper.appendChild(progressDiv);
+
     const statusDiv = document.createElement('div');
     statusDiv.style.cssText = `
-        margin-top: 16px;
+        margin-top: 12px;
         font-size: 12px;
         color: #495057;
         max-height: 200px;
@@ -312,7 +323,6 @@
     controlPanel.appendChild(contentWrapper);
     document.body.appendChild(controlPanel);
 
-    // --- LOGIC KÉO THẢ ---
     let dragStartX, dragStartY, panelStartX, panelStartY, isDragging = false;
     let wasDragging = false;
 
@@ -335,14 +345,12 @@
 
         e.preventDefault();
     });
-
     document.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
 
         const deltaX = e.clientX - dragStartX;
         const deltaY = e.clientY - dragStartY;
 
-        // Chỉ coi là đang kéo nếu di chuyển đủ xa
         if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
             wasDragging = true;
         }
@@ -351,7 +359,6 @@
         let newY = panelStartY + deltaY;
 
         const rect = controlPanel.getBoundingClientRect();
-        // Giữ khoảng cách tối thiểu 20px từ mép
         const maxX = window.innerWidth - rect.width - 20;
         const maxY = window.innerHeight - rect.height - 20;
 
@@ -360,9 +367,8 @@
 
         controlPanel.style.left = newX + 'px';
         controlPanel.style.top = newY + 'px';
-        controlPanel.style.right = 'auto'; // Luôn dùng Left/Top khi kéo thả
+        controlPanel.style.right = 'auto';
     });
-
     document.addEventListener('mouseup', () => {
         if (isDragging) {
             isDragging = false;
@@ -370,17 +376,13 @@
             controlPanel.style.transition = 'all 0.3s ease';
         }
     });
-
-    // Cần cập nhật lại vị trí khi thay đổi kích thước màn hình để giữ đúng vị trí ban đầu (initialRightPercent)
     window.addEventListener('resize', () => {
-        // Nếu đang ở trạng thái thu gọn và chưa kéo thả
         if (isMinimized && !wasDragging) {
              const newRightPixel = window.innerWidth * 0.05;
              const newLeft = window.innerWidth - minimizedWidth - newRightPixel;
+
              controlPanel.style.left = newLeft + 'px';
-             // Top vẫn giữ nguyên theo pixel cố định (150px)
         } else if (!isMinimized) {
-            // Khi mở rộng, cần đảm bảo panel không bị tràn ra ngoài
             const rect = controlPanel.getBoundingClientRect();
             let left = rect.left;
             let top = rect.top;
@@ -390,15 +392,11 @@
 
             left = Math.max(20, Math.min(left, maxX));
             top = Math.max(20, Math.min(top, maxY));
-
             controlPanel.style.left = left + 'px';
             controlPanel.style.top = top + 'px';
         }
     });
-
-
     const togglePanel = () => {
-        // CHẶN MỞ PANEL NẾU VỪA KÉO THẢ
         if (isMinimized && wasDragging) {
             wasDragging = false;
             return;
@@ -414,7 +412,6 @@
 
         if (isMinimized) {
             const oldWidth = rect.width;
-
             titleWrapper.style.display = 'none';
             contentWrapper.style.display = 'none';
             controlPanel.style.display = 'flex';
@@ -428,10 +425,8 @@
             controlPanel.style.width = '56px';
             controlPanel.style.height = '56px';
             controlPanel.style.border = 'none';
-
             minimizeBtn.style.display = 'flex';
 
-            // ĐIỀU CHỈNH VỊ TRÍ KHI THU GỌN: Để icon dính vào góc phải của vị trí mở rộng cũ
             const deltaX = (oldWidth - minimizedWidth);
             currentLeft = currentLeft + deltaX;
 
@@ -439,20 +434,15 @@
             const maxY = window.innerHeight - 56 - 20;
             currentLeft = Math.max(20, Math.min(currentLeft, maxX));
             currentTop = Math.max(20, Math.min(currentTop, maxY));
-
             controlPanel.style.left = currentLeft + 'px';
             controlPanel.style.top = currentTop + 'px';
-            controlPanel.style.right = 'auto'; // Luôn set 'auto' khi dùng left/top
+            controlPanel.style.right = 'auto';
 
             setTimeout(() => {
                 controlPanel.style.transition = 'all 0.3s ease';
             }, 50);
-
         } else {
-            // Lấy kích thước hiện tại (56px)
             const currentLeftBeforeExpand = currentLeft;
-
-            // Thiết lập cho trạng thái mở rộng
             controlPanel.style.display = 'flex';
             controlPanel.style.flexDirection = 'column';
 
@@ -468,8 +458,6 @@
             minimizeBtn.style.display = 'none';
             titleWrapper.style.display = 'flex';
             contentWrapper.style.display = 'block';
-
-            // ĐIỀU CHỈNH VỊ TRÍ KHI MỞ RỘNG: Dịch sang trái một đoạn bằng (expandedMinWidth - minimizedWidth) để mở rộng từ góc phải
             const deltaX = (expandedMinWidth - minimizedWidth);
             currentLeft = currentLeftBeforeExpand - deltaX;
 
@@ -483,13 +471,12 @@
 
                 controlPanel.style.left = currentLeft + 'px';
                 controlPanel.style.top = currentTop + 'px';
-                controlPanel.style.right = 'auto'; // Luôn set 'auto' khi dùng left/top
+                controlPanel.style.right = 'auto';
                 controlPanel.style.transition = 'all 0.3s ease';
             }, 10);
         }
         if (wasDragging) wasDragging = false;
     };
-
     minimizeBtn.onclick = (e) => {
         e.stopPropagation();
         togglePanel();
@@ -498,8 +485,6 @@
         e.stopPropagation();
         togglePanel();
     };
-
-    // --- LOGIC XỬ LÝ FILE (GIỮ NGUYÊN) ---
 
     async function readFirstLine(file) {
         return new Promise((resolve) => {
@@ -567,36 +552,59 @@
     uploadBtn.addEventListener('click', async () => {
         const files = Array.from(fileInput.files);
         if (files.length === 0) {
-            statusDiv.style.display = 'block';
-            statusDiv.innerHTML = '<span style="color: #dc3545; font-weight: 500;">⚠ Vui lòng chọn file</span>';
+            progressDiv.style.display = 'block';
+            progressDiv.style.background = '#fff8f7';
+            progressDiv.innerHTML = '<span style="color: #dc3545; font-weight: 500;">⚠ Vui lòng chọn file</span>';
+            statusDiv.style.display = 'none';
             return;
         }
 
         files.sort((a, b) => a.name.localeCompare(b.name));
 
         const forms = findChapterForms();
+        const maxUploads = Math.min(files.length, forms.length);
+
         if (forms.length === 0) {
-            statusDiv.style.display = 'block';
-            statusDiv.innerHTML = '<span style="color: #dc3545; font-weight: 500;">⚠ Không tìm thấy form</span>';
+            progressDiv.style.display = 'block';
+            progressDiv.style.background = '#fff8f7';
+            progressDiv.innerHTML = '<span style="color: #dc3545; font-weight: 500;">⚠ Không tìm thấy form</span>';
+            statusDiv.style.display = 'none';
             return;
         }
 
+        // Thiết lập ban đầu cho Progress Div (Thanh tiến độ và thông báo)
+        progressDiv.style.display = 'block';
+        progressDiv.style.background = '#ffffff';
+        progressDiv.innerHTML = `
+            <strong>Đang upload 0/${maxUploads} file...</strong>
+            <div style="height: 8px; background-color: #e9ecef; border-radius: 4px; margin-top: 8px; margin-bottom: 0px;">
+                <div id="uploadProgressBar" style="width: 0%; height: 100%; background-color: #28a745; border-radius: 4px; transition: width 0.3s ease;"></div>
+            </div>
+        `;
         statusDiv.style.display = 'block';
-        statusDiv.innerHTML = `<strong>Đang upload ${files.length} file...</strong><br><br>`;
+        statusDiv.innerHTML = '';
 
+        const progressBar = document.getElementById('uploadProgressBar');
+        const progressText = progressDiv.querySelector('strong');
 
-        for (let i = 0; i < Math.min(files.length, forms.length); i++) {
+        for (let i = 0; i < maxUploads; i++) {
             try {
                 const chapterName = await uploadToForm(forms[i], files[i]);
-                const displayName = chapterName.length > 40 ?
-                    chapterName.substring(0, 40) + '...' : chapterName;
+                const displayName = chapterName.length > 40 ? chapterName.substring(0, 40) + '...' : chapterName;
                 statusDiv.innerHTML += `<span style="color: #28a745;">✓</span> ${i + 1}. ${displayName}<br>`;
-                await new Promise(resolve => setTimeout(resolve, 300));
             } catch (error) {
-                statusDiv.innerHTML += `<span style="color: #dc3545;">✗</span> ${i + 1}. Lỗi<br>`;
+                statusDiv.innerHTML += `<span style="color: #dc3545;">✗</span> ${i + 1}. Lỗi (${files[i].name})<br>`;
             }
+
+            const percent = ((i + 1) / maxUploads) * 100;
+            progressBar.style.width = percent + '%';
+            progressText.textContent = `Đang upload ${i + 1}/${maxUploads} file...`;
+
+            await new Promise(resolve => setTimeout(resolve, 300));
         }
 
-        statusDiv.innerHTML += '<br><strong style="color: #28a745;">✓ Hoàn tất</strong>';
+        // Hoàn thành: Xóa thanh tiến độ và chỉ hiển thị thông báo hoàn thành
+        progressDiv.innerHTML = `<strong style="color: #28a745;">✓ Hoàn tất upload ${maxUploads} file</strong>`;
+        progressDiv.style.background = '#e9f8f4';
     });
 })();
