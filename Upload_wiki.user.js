@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Upload Multiple Files for Wiki
 // @namespace    http://tampermonkey.net/
-// @version      2.0.8
+// @version      2.0.9
 // @author       giaays
 // @updateURL    https://raw.githubusercontent.com/giaays/Get-name-Wiki/main/Upload_wiki.user.js
 // @downloadURL  https://raw.githubusercontent.com/giaays/Get-name-Wiki/main/Upload_wiki.user.js
@@ -14,7 +14,7 @@
 
 (function() {
     'use strict';
-
+  
     let isMinimized = true;
 
     const minimizedWidth = 56;
@@ -71,7 +71,7 @@
     `;
     controlPanel.appendChild(minimizeBtn);
     const titleWrapper = document.createElement('div');
-    titleWrapper.style.cssText = 'display: none; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e5e1da; width: 100%;';
+    titleWrapper.style.cssText = 'display: none; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e5e1da;' + 'width: 100%;';
 
     const titleLeft = document.createElement('div');
     titleLeft.style.cssText = 'display: flex; align-items: center; gap: 10px;';
@@ -303,7 +303,6 @@
         transition: all 0.3s ease;
     `;
     contentWrapper.appendChild(progressDiv);
-
     const statusDiv = document.createElement('div');
     statusDiv.style.cssText = `
         margin-top: 12px;
@@ -430,7 +429,6 @@
 
             const deltaX = (oldWidth - minimizedWidth);
             currentLeft = currentLeft + deltaX;
-
             const maxX = window.innerWidth - 56 - 20;
             const maxY = window.innerHeight - 56 - 20;
             currentLeft = Math.max(20, Math.min(currentLeft, maxX));
@@ -461,7 +459,6 @@
             contentWrapper.style.display = 'block';
             const deltaX = (expandedMinWidth - minimizedWidth);
             currentLeft = currentLeftBeforeExpand - deltaX;
-
             setTimeout(() => {
                 const newRect = controlPanel.getBoundingClientRect();
                 const maxX = window.innerWidth - newRect.width - 20;
@@ -486,15 +483,12 @@
         e.stopPropagation();
         togglePanel();
     };
-
     async function readFirstLine(file) {
         return new Promise((resolve) => {
             const reader = new FileReader();
             reader.onload = (e) => {
                 let text = e.target.result;
 
-                // FIX: Kiểm tra và loại bỏ Byte Order Mark (BOM) cho file UTF-8
-                // Ký tự BOM Unicode là \uFEFF
                 if (text.charCodeAt(0) === 0xFEFF) {
                     text = text.substring(1);
                 }
@@ -510,7 +504,6 @@
 
                 resolve(firstLine);
             };
-            //'UTF-8' và thêm bước loại bỏ BOM
             reader.readAsText(file, 'UTF-8'); 
         });
     }
@@ -537,3 +530,76 @@
         form.nameInput.dispatchEvent(new Event('change', { bubbles: true }));
 
         const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        form.fileInput.files = dataTransfer.files;
+        form.fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+        return chapterName;
+    }
+
+    fileInput.addEventListener('change', () => {
+        const count = fileInput.files.length;
+        if (count > 0) {
+            fileCountDiv.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#28a745" stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
+                    <path d="M20 6L9 17l-5-5"/>
+                </svg>
+                <span style="color: #28a745; font-weight: 500;">Đã chọn ${count} file</span>
+            `;
+            fileCountDiv.style.display = 'block';
+        } else {
+            fileCountDiv.style.display = 'none';
+        }
+    });
+    uploadBtn.addEventListener('click', async () => {
+        const files = Array.from(fileInput.files);
+        if (files.length === 0) {
+            progressDiv.style.display = 'block';
+            progressDiv.style.background = '#fff8f7';
+            progressDiv.innerHTML = '<span style="color: #dc3545; font-weight: 500;">⚠ Vui lòng chọn file</span>';
+            statusDiv.style.display = 'none';
+            return;
+        }
+
+        files.sort((a, b) => a.name.localeCompare(b.name));
+
+        const forms = findChapterForms();
+        const maxUploads = Math.min(files.length, forms.length);
+
+        if (forms.length === 0) {
+            progressDiv.style.display = 'block';
+            progressDiv.style.background = '#fff8f7';
+            progressDiv.innerHTML = '<span style="color: #dc3545; font-weight: 500;">⚠ Không tìm thấy form</span>';
+            statusDiv.style.display = 'none';
+            return;
+        }
+
+        progressDiv.style.display = 'block';
+        progressDiv.style.background = '#ffffff';
+        progressDiv.innerHTML = `<strong>Đang upload 0/${maxUploads} file...</strong><div style="height: 8px; background-color: #e9ecef; border-radius: 4px; margin-top: 8px; margin-bottom: 0px;"><div id="uploadProgressBar" style="width: 0%; height: 100%; background-color: #28a745; border-radius: 4px; transition: width 0.3s ease;"></div></div>`;
+        statusDiv.style.display = 'block';
+        statusDiv.innerHTML = '';
+        
+        const progressBar = document.getElementById('uploadProgressBar');
+        const progressText = progressDiv.querySelector('strong');
+
+        for (let i = 0; i < maxUploads; i++) {
+            try {
+                const chapterName = await uploadToForm(forms[i], files[i]);
+                const displayName = chapterName.length > 40 ? chapterName.substring(0, 40) + '...' : chapterName;
+                statusDiv.innerHTML += `<span style="color: #28a745;">✓</span> ${i + 1}. ${displayName}<br>`;
+            } catch (error) {
+                statusDiv.innerHTML += `<span style="color: #dc3545;">✗</span> ${i + 1}. Lỗi (${files[i].name})<br>`;
+            }
+
+            const percent = ((i + 1) / maxUploads) * 100;
+            progressBar.style.width = percent + '%';
+            progressText.textContent = `Đang upload ${i + 1}/${maxUploads} file...`;
+
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
+
+        progressDiv.innerHTML = `<strong style="color: #28a745;">✓ Hoàn tất upload ${maxUploads} file</strong>`;
+        progressDiv.style.background = '#e9f8f4';
+    });
+})();
