@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         Upload Multiple Files for Wiki
 // @namespace    http://tampermonkey.net/
-// @version      2.0.4
+// @version      2.0.5
 // @author       giaays
 // @updateURL    https://raw.githubusercontent.com/giaays/Get-name-Wiki/main/Upload_wiki.user.js
 // @downloadURL  https://raw.githubusercontent.com/giaays/Get-name-Wiki/main/Upload_wiki.user.js
 // @description  Tự động upload file txt và điền tên chương
 // @match        *://*/nhung-file*
-// @match        *://*/chinh-sua*
+// @match        *://*/*chinh-sua*
 // @icon         https://raw.githubusercontent.com/giaays/Get-name-Wiki/main/icon.png
 // @grant        none
 // ==/UserScript==
