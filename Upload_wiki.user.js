@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Upload Multiple Files for Wiki
 // @namespace    http://tampermonkey.net/
-// @version      2.0.9
+// @version      2.1.0
 // @author       giaays
 // @updateURL    https://raw.githubusercontent.com/giaays/Get-name-Wiki/main/Upload_wiki.user.js
 // @downloadURL  https://raw.githubusercontent.com/giaays/Get-name-Wiki/main/Upload_wiki.user.js
@@ -14,14 +14,19 @@
 
 (function() {
     'use strict';
-  
+
     let isMinimized = true;
+    let selectedFiles = [];
 
+    let wasProgressDivVisible = 'none';
+    let wasCompletionSummaryDivVisible = 'none';
+    let wasStatusDivVisible = 'none';
+
+
+    const initialTop = '100px';
     const minimizedWidth = 56;
-    const expandedMinWidth = 320;
+    const fixedExpandedWidth = 340;
 
-    const initialTop = '150px';
-    const initialRightPercent = '5%';
 
     const initialRightPixel = window.innerWidth * 0.05;
     const initialLeft = window.innerWidth - minimizedWidth - initialRightPixel;
@@ -49,6 +54,11 @@
         justify-content: center;
     `;
 
+    const innerPanelContent = document.createElement('div');
+    innerPanelContent.style.cssText = 'width: 100%; height: 100%;';
+    controlPanel.appendChild(innerPanelContent);
+
+
     const minimizeBtn = document.createElement('button');
     minimizeBtn.innerHTML = `
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
@@ -69,9 +79,10 @@
         padding: 0;
         margin: 0;
     `;
-    controlPanel.appendChild(minimizeBtn);
+    innerPanelContent.appendChild(minimizeBtn);
+
     const titleWrapper = document.createElement('div');
-    titleWrapper.style.cssText = 'display: none; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e5e1da;' + 'width: 100%;';
+    titleWrapper.style.cssText = 'display: none; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e5e1da; width: 100%;';
 
     const titleLeft = document.createElement('div');
     titleLeft.style.cssText = 'display: flex; align-items: center; gap: 10px;';
@@ -88,6 +99,7 @@
     title.textContent = 'Auto Upload';
     title.style.cssText = 'color: #212529; font-size: 18px; font-weight: 600;';
     titleLeft.appendChild(title);
+
     const minimizeBtnExpanded = document.createElement('button');
     minimizeBtnExpanded.innerHTML = `
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#495057" stroke-width="2">
@@ -114,7 +126,7 @@
 
     titleWrapper.appendChild(titleLeft);
     titleWrapper.appendChild(minimizeBtnExpanded);
-    controlPanel.appendChild(titleWrapper);
+    innerPanelContent.appendChild(titleWrapper);
 
     const contentWrapper = document.createElement('div');
     contentWrapper.style.cssText = 'display: none; width: 100%;';
@@ -178,75 +190,297 @@
     fileCountDiv.style.cssText = 'color: #6c757d; font-size: 13px; margin-top: 8px; margin-bottom: 12px; display: none; padding-left: 4px;';
     contentWrapper.appendChild(fileCountDiv);
 
-    const checkboxWrapper = document.createElement('div');
-    checkboxWrapper.style.cssText = `
-        margin-top: 12px;
-        margin-bottom: 16px;
-        padding: 12px;
-        background: #ffffff;
-        border-radius: 8px;
-        border: 1px solid #d6cfc4;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        transition: all 0.2s;
-    `;
+    fileInput.onchange = (event) => {
+        selectedFiles = Array.from(event.target.files);
 
-    checkboxWrapper.onmouseover = () => {
-        checkboxWrapper.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)';
-        checkboxWrapper.style.borderColor = '#b8ad9f';
-    };
-    checkboxWrapper.onmouseout = () => {
-        checkboxWrapper.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
-        checkboxWrapper.style.borderColor = '#d6cfc4';
-    };
+        if (selectedFiles.length > 0) {
+            fileCountDiv.textContent = `✓ Đã chọn ${selectedFiles.length} file`;
 
-    let isChecked = true;
+            fileCountDiv.style.cssText = `
+                color: #155724;
+                font-size: 13px;
+                margin-top: 8px;
+                margin-bottom: 12px;
+                display: block;
+                font-weight: 600;
+                padding-left: 4px;
+            `;
 
-    const customCheckbox = document.createElement('div');
-    customCheckbox.style.cssText = `
-        width: 20px;
-        height: 20px;
-        border: 2px solid #495057;
-        border-radius: 4px;
-        background: #495057;
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.15s;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    `;
-    const checkmark = document.createElement('div');
-    checkmark.innerHTML = `
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="white" stroke="white" stroke-width="1">
-            <path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path>
-        </svg>
-    `;
-    checkmark.style.cssText = 'display: flex; align-items: center; justify-content: center;';
-    customCheckbox.appendChild(checkmark);
-
-    const checkboxText = document.createElement('span');
-    checkboxText.textContent = 'Xóa mô tả sau dấu (-)';
-    checkboxText.style.cssText = 'color: #495057; font-size: 14px; flex: 1;';
-
-    checkboxWrapper.appendChild(customCheckbox);
-    checkboxWrapper.appendChild(checkboxText);
-    checkboxWrapper.onclick = () => {
-        isChecked = !isChecked;
-        if (isChecked) {
-            customCheckbox.style.background = '#495057';
-            customCheckbox.style.borderColor = '#495057';
-            checkmark.style.display = 'flex';
         } else {
-            customCheckbox.style.background = '#ffffff';
-            customCheckbox.style.borderColor = '#d6cfc4';
-            checkmark.style.display = 'none';
+            fileCountDiv.textContent = '';
+
+            fileCountDiv.style.cssText = 'color: #6c757d; font-size: 13px; margin-top: 8px; margin-bottom: 12px; display: none; padding-left: 4px;';
         }
     };
-    contentWrapper.appendChild(checkboxWrapper);
+
+    let isSettingsExpanded = false;
+
+    const settingsGearIcon = `
+        <svg id="settingsGearIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#495057" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
+        </svg>
+    `;
+    const settingsChevronIcon = `
+        <svg id="settingsChevronIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#495057" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.2s ease; transform: rotate(0deg);">
+            <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+    `;
+
+    const settingsToggle = document.createElement('div');
+    settingsToggle.style.cssText = 'color: #495057; font-size: 14px; font-weight: 600; margin-top: 15px; margin-bottom: 5px; cursor: pointer; padding: 10px 12px; background: #e5e1da; border-radius: 8px; transition: background 0.2s; display: flex; align-items: center; justify-content: space-between;';
+
+    settingsToggle.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 8px;">
+            ${settingsGearIcon}
+            <span>Cài đặt</span>
+        </div>
+        ${settingsChevronIcon}
+    `;
+
+    settingsToggle.onmouseover = () => { settingsToggle.style.background = '#d6cfc4'; };
+    settingsToggle.onmouseout = () => {
+        if (!isSettingsExpanded) {
+            settingsToggle.style.background = '#e5e1da';
+        }
+    };
+    contentWrapper.appendChild(settingsToggle);
+
+    const settingsContainer = document.createElement('div');
+    settingsContainer.style.cssText = `
+        padding-top: 5px;
+        border-top: 1px dashed #d6cfc4;
+        margin-bottom: 10px;
+        width: 100%;
+        box-sizing: border-box;
+        display: none;
+    `;
+    contentWrapper.appendChild(settingsContainer);
+
+    const setSettingsExpanded = (expanded) => {
+        isSettingsExpanded = expanded;
+        const chevron = document.getElementById('settingsChevronIcon');
+
+        if (isSettingsExpanded) {
+            wasProgressDivVisible = progressDiv.style.display;
+            wasCompletionSummaryDivVisible = completionSummaryDiv.style.display;
+            wasStatusDivVisible = statusDiv.style.display;
+
+            settingsContainer.style.display = 'block';
+            settingsToggle.style.background = '#d6cfc4';
+            if (chevron) {
+                chevron.style.transform = 'rotate(180deg)';
+            }
+
+            progressDiv.style.display = 'none';
+            completionSummaryDiv.style.display = 'none';
+            statusDiv.style.display = 'none';
+
+        } else {
+            progressDiv.style.display = wasProgressDivVisible;
+            completionSummaryDiv.style.display = wasCompletionSummaryDivVisible;
+            statusDiv.style.display = wasStatusDivVisible;
+
+            settingsContainer.style.display = 'none';
+            settingsToggle.style.background = '#e5e1da';
+            if (chevron) {
+                chevron.style.transform = 'rotate(0deg)';
+            }
+        }
+    };
+
+    const toggleSettings = () => {
+        setSettingsExpanded(!isSettingsExpanded);
+    };
+
+    const collapseSettings = () => {
+        setSettingsExpanded(false);
+    }
+
+    settingsToggle.onclick = toggleSettings;
+
+    const STORAGE_KEY = 'WIKI_UPLOAD_SETTINGS_V2';
+
+    const saveSettings = () => {
+        const settings = {
+            filterWords: filterInput.value.trim(),
+            dashFilter: isDashFilterChecked,
+            duplicateFilter: isDuplicateFilterChecked
+        };
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+        } catch (e) {
+            console.error("Lỗi khi lưu cài đặt:", e);
+        }
+    };
+
+
+    const createCustomCheckbox = (initialChecked, textContent, onClickHandler, note = null) => {
+        let isCheckedState = initialChecked;
+
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = `
+            padding: 10px 12px;
+            background: #ffffff;
+            border-radius: 8px;
+            border: 1px solid #d6cfc4;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+            box-sizing: border-box;
+        `;
+
+        wrapper.onmouseover = () => {
+            wrapper.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)';
+            wrapper.style.borderColor = '#b8ad9f';
+        };
+        wrapper.onmouseout = () => {
+            wrapper.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
+            wrapper.style.borderColor = '#d6cfc4';
+        };
+
+        const contentRow = document.createElement('div');
+        contentRow.style.cssText = 'display: flex; align-items: center; gap: 10px; width: 100%;';
+
+        const customBox = document.createElement('div');
+        customBox.style.cssText = `
+            width: 20px;
+            height: 20px;
+            border: 2px solid ${isCheckedState ? '#495057' : '#d6cfc4'};
+            border-radius: 4px;
+            background: ${isCheckedState ? '#495057' : '#ffffff'};
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        `;
+        const checkmark = document.createElement('div');
+        checkmark.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="white" stroke="white" stroke-width="1">
+                <path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path>
+            </svg>
+        `;
+        checkmark.style.cssText = `display: ${isCheckedState ? 'flex' : 'none'}; align-items: center; justify-content: center;`;
+        customBox.appendChild(checkmark);
+
+        const text = document.createElement('span');
+        text.textContent = textContent;
+        text.style.cssText = 'color: #495057; font-size: 14px; flex: 1;';
+
+        contentRow.appendChild(customBox);
+        contentRow.appendChild(text);
+        wrapper.appendChild(contentRow);
+
+        if (note) {
+            const noteDiv = document.createElement('div');
+            noteDiv.textContent = note;
+            noteDiv.style.cssText = 'color: #6c757d; font-size: 11px; margin-top: 2px; padding-left: 30px; line-height: 1.3;';
+            wrapper.appendChild(noteDiv);
+        }
+
+        const updateUI = (checked) => {
+            if (checked) {
+                customBox.style.background = '#495057';
+                customBox.style.borderColor = '#495057';
+                checkmark.style.display = 'flex';
+            } else {
+                customBox.style.background = '#ffffff';
+                customBox.style.borderColor = '#d6cfc4';
+                checkmark.style.display = 'none';
+            }
+        };
+
+        const setState = (checked) => {
+            isCheckedState = checked;
+            updateUI(isCheckedState);
+            onClickHandler(isCheckedState);
+        };
+
+        wrapper.onclick = () => {
+            isCheckedState = !isCheckedState;
+            updateUI(isCheckedState);
+            onClickHandler(isCheckedState);
+            saveSettings();
+        };
+
+        return { wrapper, isChecked: () => isCheckedState, setState };
+    };
+
+    let isDashFilterChecked = true;
+    const dashFilter = createCustomCheckbox(true, 'Xóa mô tả sau dấu (-)', (checked) => {
+        isDashFilterChecked = checked;
+    });
+    dashFilter.wrapper.style.marginTop = '12px';
+    dashFilter.wrapper.style.marginBottom = '8px';
+    settingsContainer.appendChild(dashFilter.wrapper);
+
+    let isDuplicateFilterChecked = true;
+    const duplicateFilter = createCustomCheckbox(true, 'Xóa tên chương lặp', (checked) => {
+        isDuplicateFilterChecked = checked;
+    }, '(Ví dụ: 第1章 第1章 thành 第1章)');
+    duplicateFilter.wrapper.style.marginTop = '8px';
+    duplicateFilter.wrapper.style.marginBottom = '12px';
+    settingsContainer.appendChild(duplicateFilter.wrapper);
+
+
+    const filterExtraWordsDescription = document.createElement('div');
+    filterExtraWordsDescription.textContent = 'Xóa Từ/Cụm từ thừa trong tên chương (cách nhau bằng dấu phẩy):';
+    filterExtraWordsDescription.style.cssText = 'color: #495057; font-size: 13px; margin-bottom: 8px; padding-left: 4px; margin-top: 12px;';
+    settingsContainer.appendChild(filterExtraWordsDescription);
+
+    const filterInput = document.createElement('input');
+    filterInput.type = 'text';
+    filterInput.placeholder = 'Ví dụ: [VIP], C1';
+    filterInput.id = 'chapterFilterInput';
+    filterInput.style.cssText = `
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 4px;
+        border: 1px solid #d6cfc4;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #495057;
+        box-sizing: border-box;
+    `;
+    filterInput.value = '[VIP]';
+    settingsContainer.appendChild(filterInput);
+
+    const filterNote = document.createElement('div');
+    filterNote.textContent = '(Có phân biệt chữ hoa/thường)';
+    filterNote.style.cssText = 'color: #6c757d; font-size: 11px; margin-bottom: 12px; padding-left: 5px;';
+    settingsContainer.appendChild(filterNote);
+
+    filterInput.oninput = saveSettings;
+
+    const loadSettings = () => {
+        const settingsJson = localStorage.getItem(STORAGE_KEY);
+        if (!settingsJson) return;
+
+        try {
+            const settings = JSON.parse(settingsJson);
+
+            if (settings.dashFilter !== undefined) {
+                dashFilter.setState(settings.dashFilter);
+            }
+
+            if (settings.duplicateFilter !== undefined) {
+                duplicateFilter.setState(settings.duplicateFilter);
+            }
+
+            if (settings.filterWords !== undefined) {
+                filterInput.value = settings.filterWords;
+            }
+        } catch (e) {
+            console.error("Lỗi khi đọc cài đặt từ localStorage:", e);
+        }
+    };
+
 
     const uploadBtn = document.createElement('button');
     uploadBtn.style.cssText = `
@@ -272,6 +506,7 @@
             <path d="M3 15v4c0 1.1.9 2 2 2h14a2 2 0 002-2v-4M17 8l-5-5-5 5M12 3v12"/>
         </svg>
     `;
+    uploadIconBtn.style.verticalAlign = 'middle';
     uploadBtn.appendChild(uploadIconBtn);
 
     const uploadBtnText = document.createElement('span');
@@ -303,10 +538,39 @@
         transition: all 0.3s ease;
     `;
     contentWrapper.appendChild(progressDiv);
+
+    const progressText = document.createElement('div');
+    progressDiv.appendChild(progressText);
+
+    const progressBarWrapper = document.createElement('div');
+    progressBarWrapper.style.cssText = 'height: 8px; background: #e9ecef; border-radius: 4px; margin-top: 8px; overflow: hidden;';
+    progressDiv.appendChild(progressBarWrapper);
+
+    const progressBar = document.createElement('div');
+    progressBar.style.cssText = 'height: 100%; width: 0%; background: #28a745; transition: width 0.3s ease; border-radius: 4px;';
+    progressBarWrapper.appendChild(progressBar);
+
+    const completionSummaryDiv = document.createElement('div');
+    completionSummaryDiv.style.cssText = `
+        margin-top: 12px;
+        margin-bottom: 12px;
+        font-size: 14px;
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+        padding: 10px 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: none;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        text-align: center;
+    `;
+    contentWrapper.appendChild(completionSummaryDiv);
+
+
     const statusDiv = document.createElement('div');
     statusDiv.style.cssText = `
-        margin-top: 12px;
-        font-size: 12px;
+        font-size: 13px;
         color: #495057;
         max-height: 200px;
         overflow-y: auto;
@@ -320,14 +584,14 @@
     `;
     contentWrapper.appendChild(statusDiv);
 
-    controlPanel.appendChild(contentWrapper);
+    innerPanelContent.appendChild(contentWrapper);
     document.body.appendChild(controlPanel);
 
     let dragStartX, dragStartY, panelStartX, panelStartY, isDragging = false;
     let wasDragging = false;
 
     controlPanel.addEventListener('mousedown', (e) => {
-        if (!isMinimized && (e.target.closest('input') || e.target.closest('label') || e.target.closest('button'))) {
+        if (!isMinimized && (e.target.closest('input') || e.target.closest('label') || e.target.closest('button') || e.target.closest('#chapterFilterInput') || e.target.closest('.checkbox-wrapper'))) {
             return;
         }
 
@@ -367,6 +631,7 @@
 
         controlPanel.style.left = newX + 'px';
         controlPanel.style.top = newY + 'px';
+
         controlPanel.style.right = 'auto';
     });
     document.addEventListener('mouseup', () => {
@@ -380,7 +645,7 @@
         if (isMinimized && !wasDragging) {
              const newRightPixel = window.innerWidth * 0.05;
              const newLeft = window.innerWidth - minimizedWidth - newRightPixel;
-   
+
              controlPanel.style.left = newLeft + 'px';
         } else if (!isMinimized) {
             const rect = controlPanel.getBoundingClientRect();
@@ -397,6 +662,8 @@
         }
     });
     const togglePanel = () => {
+        if (isDragging) return;
+
         if (isMinimized && wasDragging) {
             wasDragging = false;
             return;
@@ -442,11 +709,12 @@
             }, 50);
         } else {
             const currentLeftBeforeExpand = currentLeft;
+
             controlPanel.style.display = 'flex';
             controlPanel.style.flexDirection = 'column';
 
-            controlPanel.style.minWidth = '320px';
-            controlPanel.style.maxWidth = '360px';
+            controlPanel.style.minWidth = `${fixedExpandedWidth}px`;
+            controlPanel.style.maxWidth = `${fixedExpandedWidth}px`;
             controlPanel.style.padding = '24px';
             controlPanel.style.background = '#ffffff';
             controlPanel.style.borderRadius = '12px';
@@ -457,8 +725,10 @@
             minimizeBtn.style.display = 'none';
             titleWrapper.style.display = 'flex';
             contentWrapper.style.display = 'block';
-            const deltaX = (expandedMinWidth - minimizedWidth);
+
+            const deltaX = (fixedExpandedWidth - minimizedWidth);
             currentLeft = currentLeftBeforeExpand - deltaX;
+
             setTimeout(() => {
                 const newRect = controlPanel.getBoundingClientRect();
                 const maxX = window.innerWidth - newRect.width - 20;
@@ -492,19 +762,44 @@
                 if (text.charCodeAt(0) === 0xFEFF) {
                     text = text.substring(1);
                 }
-                
+
                 let firstLine = text.split('\n')[0].trim();
 
-                if (isChecked) {
+                const filterWords = filterInput.value.trim()
+                    .split(',')
+                    .map(word => word.trim())
+                    .filter(word => word.length > 0);
+
+                if (filterWords.length > 0) {
+                    let filteredLine = firstLine;
+                    filterWords.forEach(word => {
+                        const regex = new RegExp(word, 'g');
+                        filteredLine = filteredLine.replace(regex, '');
+                    });
+                    firstLine = filteredLine.trim();
+                }
+
+                if (isDashFilterChecked) {
                     const dashIndex = firstLine.indexOf(' - ');
                     if (dashIndex !== -1) {
                         firstLine = firstLine.substring(0, dashIndex).trim();
                     }
                 }
 
+                if (isDuplicateFilterChecked) {
+                    const parts = firstLine.split(/\s+/).filter(p => p.length > 0);
+                    const uniqueParts = [];
+                    for(const part of parts) {
+                        if (uniqueParts.length === 0 || uniqueParts[uniqueParts.length - 1] !== part) {
+                            uniqueParts.push(part);
+                        }
+                    }
+                    firstLine = uniqueParts.join(' ');
+                }
+
                 resolve(firstLine);
             };
-            reader.readAsText(file, 'UTF-8'); 
+            reader.readAsText(file, 'UTF-8');
         });
     }
 
@@ -523,83 +818,141 @@
         return forms;
     }
 
-    async function uploadToForm(form, file) {
-        const chapterName = await readFirstLine(file);
-        form.nameInput.value = chapterName;
-        form.nameInput.dispatchEvent(new Event('input', { bubbles: true }));
-        form.nameInput.dispatchEvent(new Event('change', { bubbles: true }));
+    let isUploading = false;
+    let uploadProcessRunning = false;
+    let forms;
+    let uploadQueue = [];
+    let processedCount = 0;
+    let successCount = 0;
+    let failCount = 0;
+    let totalFiles = 0;
 
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
-        form.fileInput.files = dataTransfer.files;
-        form.fileInput.dispatchEvent(new Event('change', { bubbles: true }));
-
-        return chapterName;
+    function updateProgress(index, total) {
+        progressText.textContent = `Đang upload ${index}/${totalFiles} file...`;
+        const percent = (index / totalFiles) * 100;
+        progressBar.style.width = `${percent}%`;
     }
 
-    fileInput.addEventListener('change', () => {
-        const count = fileInput.files.length;
-        if (count > 0) {
-            fileCountDiv.innerHTML = `
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#28a745" stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
-                    <path d="M20 6L9 17l-5-5"/>
-                </svg>
-                <span style="color: #28a745; font-weight: 500;">Đã chọn ${count} file</span>
-            `;
-            fileCountDiv.style.display = 'block';
-        } else {
-            fileCountDiv.style.display = 'none';
-        }
-    });
-    uploadBtn.addEventListener('click', async () => {
-        const files = Array.from(fileInput.files);
-        if (files.length === 0) {
-            progressDiv.style.display = 'block';
-            progressDiv.style.background = '#fff8f7';
-            progressDiv.innerHTML = '<span style="color: #dc3545; font-weight: 500;">⚠ Vui lòng chọn file</span>';
-            statusDiv.style.display = 'none';
-            return;
-        }
-
-        files.sort((a, b) => a.name.localeCompare(b.name));
-
-        const forms = findChapterForms();
-        const maxUploads = Math.min(files.length, forms.length);
-
-        if (forms.length === 0) {
-            progressDiv.style.display = 'block';
-            progressDiv.style.background = '#fff8f7';
-            progressDiv.innerHTML = '<span style="color: #dc3545; font-weight: 500;">⚠ Không tìm thấy form</span>';
-            statusDiv.style.display = 'none';
-            return;
-        }
-
-        progressDiv.style.display = 'block';
-        progressDiv.style.background = '#ffffff';
-        progressDiv.innerHTML = `<strong>Đang upload 0/${maxUploads} file...</strong><div style="height: 8px; background-color: #e9ecef; border-radius: 4px; margin-top: 8px; margin-bottom: 0px;"><div id="uploadProgressBar" style="width: 0%; height: 100%; background-color: #28a745; border-radius: 4px; transition: width 0.3s ease;"></div></div>`;
+    function showStatus(isFinal = false) {
         statusDiv.style.display = 'block';
-        statusDiv.innerHTML = '';
-        
-        const progressBar = document.getElementById('uploadProgressBar');
-        const progressText = progressDiv.querySelector('strong');
+        if (isFinal) {
+            progressDiv.style.display = 'none';
 
-        for (let i = 0; i < maxUploads; i++) {
-            try {
-                const chapterName = await uploadToForm(forms[i], files[i]);
-                const displayName = chapterName.length > 40 ? chapterName.substring(0, 40) + '...' : chapterName;
-                statusDiv.innerHTML += `<span style="color: #28a745;">✓</span> ${i + 1}. ${displayName}<br>`;
-            } catch (error) {
-                statusDiv.innerHTML += `<span style="color: #dc3545;">✗</span> ${i + 1}. Lỗi (${files[i].name})<br>`;
-            }
+            completionSummaryDiv.innerHTML = `Hoàn thành!`;
+            completionSummaryDiv.style.display = 'block';
 
-            const percent = ((i + 1) / maxUploads) * 100;
-            progressBar.style.width = percent + '%';
-            progressText.textContent = `Đang upload ${i + 1}/${maxUploads} file...`;
+            uploadBtnText.textContent = 'Bắt đầu upload';
+            uploadBtn.style.background = '#28a745';
+            uploadBtn.style.boxShadow = '0 2px 4px rgba(40,167,69,0.3), 0 4px 8px rgba(0,0,0,0.1)';
+            isUploading = false;
+        } else {
+            progressDiv.style.display = 'block';
+            completionSummaryDiv.style.display = 'none';
+        }
+    }
 
-            await new Promise(resolve => setTimeout(resolve, 300));
+    async function uploadNextFile() {
+        if (uploadQueue.length === 0 || !uploadProcessRunning) {
+            uploadProcessRunning = false;
+            showStatus(true);
+            return;
         }
 
-        progressDiv.innerHTML = `<strong style="color: #28a745;">✓ Hoàn tất upload ${maxUploads} file</strong>`;
-        progressDiv.style.background = '#e9f8f4';
-    });
+        const { form, file } = uploadQueue.shift();
+        const chapterName = await readFirstLine(file);
+        const fileName = file.name;
+
+        processedCount++;
+        updateProgress(processedCount, totalFiles);
+
+        try {
+            form.nameInput.value = chapterName;
+            form.nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+            form.nameInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            form.fileInput.files = dataTransfer.files;
+
+            form.fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+            successCount++;
+
+            const statusEntry = document.createElement('div');
+            statusEntry.style.cssText = 'color: #495057;';
+            statusEntry.innerHTML = `
+                <span style="color: #28a745; font-weight: 700; margin-right: 5px;">\u2714</span>
+                ${chapterName}
+            `;
+
+            if (statusDiv.firstChild) {
+                statusDiv.insertBefore(statusEntry, statusDiv.firstChild);
+            } else {
+                statusDiv.appendChild(statusEntry);
+             }
+
+        } catch (error) {
+            failCount++;
+            console.error(`Lỗi khi xử lý file ${fileName}:`, error);
+
+            const statusEntry = document.createElement('div');
+            statusEntry.style.cssText = 'color: #721c24;';
+            statusEntry.innerHTML = `
+                <span style="color: #dc3545; font-weight: 700; margin-right: 5px;">\u2718</span>
+                Lỗi xử lý file: ${fileName}
+            `;
+             if (statusDiv.firstChild) {
+                 statusDiv.insertBefore(statusEntry, statusDiv.firstChild);
+             } else {
+                 statusDiv.appendChild(statusDiv);
+             }
+        }
+
+        setTimeout(uploadNextFile, 50);
+    }
+
+    uploadBtn.onclick = () => {
+        if (isUploading) return;
+
+        forms = findChapterForms();
+
+        if (selectedFiles.length === 0) {
+            alert('Vui lòng chọn file TXT để upload.');
+            return;
+        }
+
+        if (selectedFiles.length > forms.length) {
+            const confirmUpload = confirm(`Bạn đã chọn ${selectedFiles.length} file nhưng chỉ có ${forms.length} ô nhập liệu chương. Chỉ có ${forms.length} file đầu tiên được xử lý. Bạn có muốn tiếp tục không?`);
+            if (!confirmUpload) return;
+        }
+
+        collapseSettings();
+
+        isUploading = true;
+        uploadProcessRunning = true;
+        successCount = 0;
+        failCount = 0;
+        processedCount = 0;
+
+        totalFiles = Math.min(selectedFiles.length, forms.length);
+        uploadQueue = [];
+        statusDiv.innerHTML = '';
+
+        for (let i = 0; i < totalFiles; i++) {
+            uploadQueue.push({
+                form: forms[i],
+                file: selectedFiles[i],
+                index: i + 1
+            });
+        }
+
+        uploadBtnText.textContent = 'Đang xử lý...';
+        uploadBtn.style.background = '#007bff';
+        uploadBtn.style.boxShadow = '0 2px 4px rgba(0,123,255,0.3), 0 4px 8px rgba(0,0,0,0.1)';
+        showStatus();
+
+        uploadNextFile();
+    };
+
+    loadSettings();
 })();
