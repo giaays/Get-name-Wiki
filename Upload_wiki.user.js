@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Upload Multiple Files for Wiki
 // @namespace    http://tampermonkey.net/
-// @version      2.1.0
+// @version      2.1.1
 // @author       giaays
 // @updateURL    https://raw.githubusercontent.com/giaays/Get-name-Wiki/main/Upload_wiki.user.js
 // @downloadURL  https://raw.githubusercontent.com/giaays/Get-name-Wiki/main/Upload_wiki.user.js
@@ -194,7 +194,7 @@
         selectedFiles = Array.from(event.target.files);
 
         if (selectedFiles.length > 0) {
-            fileCountDiv.textContent = `✓ Đã chọn ${selectedFiles.length} file`;
+            fileCountDiv.textContent = `Đã chọn ${selectedFiles.length} file`;
 
             fileCountDiv.style.cssText = `
                 color: #155724;
@@ -753,7 +753,7 @@
         e.stopPropagation();
         togglePanel();
     };
-    async function readFirstLine(file) {
+async function readFirstLine(file) {
         return new Promise((resolve) => {
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -763,7 +763,54 @@
                     text = text.substring(1);
                 }
 
-                let firstLine = text.split('\n')[0].trim();
+                let lines = text.split('\n');
+                let firstLine = '';
+
+                for (let line of lines) {
+                    let trimmedLine = line.trim();
+                    if (trimmedLine.length > 0) {
+                        firstLine = trimmedLine;
+                        break;
+                    }
+                }
+
+                if (firstLine.length === 0) {
+                    resolve(file.name.replace(/\.txt$/i, ''));
+                    return;
+                }
+
+
+                const arNumberAndSeparatorPattern = /^(\d+\s*[^a-zA-Z0-9\s]+\s*)/;
+                firstLine = firstLine.replace(arNumberAndSeparatorPattern, '').trim();
+
+
+                const doublePipeIndex = firstLine.indexOf('||');
+                if (doublePipeIndex !== -1) {
+                    firstLine = firstLine.substring(doublePipeIndex + 2).trim();
+                }
+
+
+                const redundantNumberPattern = /(第\s*[一二三四五六七八九十百千万\d]+\s*章)\s+([一二三四五六七八九十百千万\d]+)[\s、.]*/i;
+                firstLine = firstLine.replace(redundantNumberPattern, (match, p1, p2) => {
+                    return p1;
+                });
+
+
+                firstLine = firstLine.replace(/\s+/g, ' ').trim();
+
+
+                const hanChapterMatch = firstLine.match(/(第\s*[一二三四五六七八九十百千万\d]+\s*章)/i);
+                const nonHanChapterRegex = /(chapter\s*\d+|chương\s*\d+|c\s*\d+)/i;
+                const nonHanChapterMatch = firstLine.match(nonHanChapterRegex);
+
+                if (hanChapterMatch && nonHanChapterMatch) {
+                    let nonHanPart = nonHanChapterMatch[0];
+                    const cleanNonHanRegex = new RegExp(nonHanPart.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i');
+                    firstLine = firstLine.replace(cleanNonHanRegex, '').trim();
+                }
+
+
+
 
                 const filterWords = filterInput.value.trim()
                     .split(',')
@@ -773,10 +820,12 @@
                 if (filterWords.length > 0) {
                     let filteredLine = firstLine;
                     filterWords.forEach(word => {
-                        const regex = new RegExp(word, 'g');
-                        filteredLine = filteredLine.replace(regex, '');
+
+                        const escapedWord = word.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                        const regex = new RegExp(`\\s*${escapedWord}\\s*`, 'g');
+                        filteredLine = filteredLine.replace(regex, ' ').trim();
                     });
-                    firstLine = filteredLine.trim();
+                    firstLine = filteredLine.replace(/\s+/g, ' ').trim();
                 }
 
                 if (isDashFilterChecked) {
@@ -787,6 +836,12 @@
                 }
 
                 if (isDuplicateFilterChecked) {
+
+
+                    const aggressiveChapterDuplicatePattern = /(第\s*\S+?\s*章)\s+(第\s*\S+?\s*章)/g;
+                    firstLine = firstLine.replace(aggressiveChapterDuplicatePattern, '$1');
+
+
                     const parts = firstLine.split(/\s+/).filter(p => p.length > 0);
                     const uniqueParts = [];
                     for(const part of parts) {
