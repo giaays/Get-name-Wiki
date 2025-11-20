@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Upload Multiple Files for Wiki
 // @namespace    http://tampermonkey.net/
-// @version      2.1.1
+// @version      2.1.2
 // @author       giaays
 // @updateURL    https://raw.githubusercontent.com/giaays/Get-name-Wiki/main/Upload_wiki.user.js
 // @downloadURL  https://raw.githubusercontent.com/giaays/Get-name-Wiki/main/Upload_wiki.user.js
@@ -780,21 +780,10 @@ async function readFirstLine(file) {
                 }
 
 
-                const arNumberAndSeparatorPattern = /^(\d+\s*[^a-zA-Z0-9\s]+\s*)/;
-                firstLine = firstLine.replace(arNumberAndSeparatorPattern, '').trim();
-
-
                 const doublePipeIndex = firstLine.indexOf('||');
                 if (doublePipeIndex !== -1) {
                     firstLine = firstLine.substring(doublePipeIndex + 2).trim();
                 }
-
-
-                const redundantNumberPattern = /(第\s*[一二三四五六七八九十百千万\d]+\s*章)\s+([一二三四五六七八九十百千万\d]+)[\s、.]*/i;
-                firstLine = firstLine.replace(redundantNumberPattern, (match, p1, p2) => {
-                    return p1;
-                });
-
 
                 firstLine = firstLine.replace(/\s+/g, ' ').trim();
 
