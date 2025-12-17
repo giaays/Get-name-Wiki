@@ -185,6 +185,15 @@
             <textarea id="output" readonly placeholder="Kết quả sẽ hiển thị ở đây..."></textarea>
         </div>
         
+        <div id="status"></div>
+        
+        <div id="changes-log" style="display: none;">
+            <div class="input-group">
+                <label>Chi tiết thay đổi:</label>
+                <div id="changes-content" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 14px;"></div>
+            </div>
+        </div>
+        
         <!-- WATERMARK SECTION -->
         <div class="watermark-section">
             <h3>Watermark</h3>
@@ -204,12 +213,11 @@
             </div>
         </div>
         
-        <div id="status"></div>
-        
-        <div id="changes-log" style="display: none;">
+        <div id="status-bottom"></div>
+        <div id="changes-log-bottom" style="display: none;">
             <div class="input-group">
                 <label>Chi tiết thay đổi:</label>
-                <div id="changes-content" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 14px;"></div>
+                <div id="changes-content-bottom" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 14px;"></div>
             </div>
         </div>
     </div>
@@ -369,29 +377,28 @@
             return encoded;
         }
         
-        function addWatermark() {
+        function addWatermarkAuto() {
             const output = document.getElementById('output');
             const watermarkText = document.getElementById('watermark-text').value.trim();
             const watermarkCount = parseInt(document.getElementById('watermark-count').value);
             
             if (!output.value.trim()) {
-                showStatus('Vui lòng xử lý văn bản trước khi thêm watermark', 'info');
                 return;
             }
             
             if (!watermarkText) {
-                showStatus('Vui lòng nhập nội dung watermark', 'info');
+                showStatusBottom('Vui lòng nhập nội dung watermark', 'info');
                 return;
             }
             
             // Save watermark text for next time
             saveWatermarkText(watermarkText);
             
-            // Tách văn bản thành các đoạn
-            const paragraphs = output.value.split('\n\n').filter(p => p.trim());
+            // Tách văn bản thành các đoạn (phân tách bằng dòng trống hoặc dấu xuống dòng)
+            const paragraphs = output.value.split(/\n\s*\n/).filter(p => p.trim());
             
             if (paragraphs.length < 2) {
-                showStatus('Văn bản cần có ít nhất 2 đoạn văn để chèn watermark', 'info');
+                showStatusBottom('Văn bản cần có ít nhất 2 đoạn văn để chèn watermark', 'info');
                 return;
             }
             
@@ -400,7 +407,7 @@
             const actualCount = Math.min(watermarkCount, maxWatermarks);
             
             if (actualCount < watermarkCount) {
-                showStatus(`Văn bản chỉ có ${paragraphs.length} đoạn, chỉ có thể chèn tối đa ${maxWatermarks} watermark`, 'info');
+                showStatusBottom(`Văn bản chỉ có ${paragraphs.length} đoạn, chỉ có thể chèn tối đa ${maxWatermarks} watermark`, 'info');
             }
             
             // Tạo danh sách vị trí ngẫu nhiên để chèn watermark
@@ -437,7 +444,22 @@
             
             output.value = result.join('\n\n');
             
-            showStatus(`Đã chèn ${actualCount} watermark vào văn bản`, 'success');
+            showStatusBottom(`Đã chèn ${actualCount} watermark vào văn bản`, 'success');
+        }
+        
+        function addWatermark() {
+            addWatermarkAuto();
+        }
+        
+        function showStatusBottom(message, type) {
+            const status = document.getElementById('status-bottom');
+            status.innerHTML = message;
+            status.className = `status ${type}`;
+            
+            setTimeout(() => {
+                status.innerHTML = '';
+                status.className = '';
+            }, 3000);
         }
         
         // ======= ORIGINAL FUNCTIONS =======
@@ -567,6 +589,11 @@
                 changesLog.style.display = 'none';
                 showStatus('Không tìm thấy ký tự nào cần sửa', 'info');
             }
+            
+            // Tự động thêm watermark sau khi fix text
+            setTimeout(() => {
+                addWatermarkAuto();
+            }, 100);
         }
         
         function clearText() {
