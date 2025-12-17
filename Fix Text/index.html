@@ -137,32 +137,6 @@
             color: #c05621;
             margin-top: 0;
         }
-        
-        .checkbox-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin: 10px 0;
-        }
-        
-        .checkbox-group label {
-            display: flex;
-            align-items: center;
-            font-weight: normal;
-            cursor: pointer;
-        }
-        
-        .checkbox-group input[type="checkbox"] {
-            width: auto;
-            margin-right: 5px;
-        }
-        
-        .hint {
-            font-size: 12px;
-            color: #718096;
-            font-style: italic;
-            margin-top: 5px;
-        }
     </style>
 </head>
 <body>
@@ -180,12 +154,13 @@
             <button onclick="copyResult()" class="copy-btn">Copy kết quả</button>
         </div>
         
+        <div id="status"></div>
+        <div id="status-watermark"></div>
+        
         <div class="input-group">
             <label for="output">Kết quả sau khi sửa:</label>
             <textarea id="output" readonly placeholder="Kết quả sẽ hiển thị ở đây..."></textarea>
         </div>
-        
-        <div id="status"></div>
         
         <div id="changes-log" style="display: none;">
             <div class="input-group">
@@ -212,14 +187,6 @@
                 <button onclick="addWatermark()" class="watermark-btn">Thêm Watermark</button>
             </div>
         </div>
-        
-        <div id="status-bottom"></div>
-        <div id="changes-log-bottom" style="display: none;">
-            <div class="input-group">
-                <label>Chi tiết thay đổi:</label>
-                <div id="changes-content-bottom" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 14px;"></div>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -242,26 +209,6 @@
 
         // ======= WATERMARK FUNCTIONS =======
         
-        // Bản đồ Homoglyphs (ký tự trông giống nhau)
-        const homoglyphs = {
-            'a': ['а', 'ạ', 'ά', 'α', 'ａ'],  // Latin a vs Cyrillic а vs Greek α
-            'e': ['е', 'ҽ', 'е́', 'ế', 'ｅ'],  // Latin e vs Cyrillic е
-            'o': ['о', 'ο', 'ο', 'ọ', 'ｏ'],  // Latin o vs Cyrillic о vs Greek ο
-            'c': ['с', 'ϲ', 'ⅽ', 'ｃ'],       // Latin c vs Cyrillic с
-            'i': ['і', 'ı', 'ɪ', 'ị', 'ｉ'],  // Latin i vs various
-            'u': ['υ', 'ս', 'ụ', 'ｕ'],       // Latin u vs Greek υ
-            'p': ['р', 'ρ', 'ｐ'],            // Latin p vs Cyrillic р
-            'n': ['п', 'ո', 'ｎ'],            // Latin n vs Cyrillic п
-            'B': ['В', 'Β', 'Ｂ'],            // Latin B vs Cyrillic В
-            'T': ['Т', 'Τ', 'Ｔ'],            // Latin T vs Cyrillic Т
-            'N': ['Ν', 'Ν', 'Ｎ'],            // Latin N vs Greek Ν
-            'g': ['ց', 'ɡ', 'ｇ'],
-            'h': ['һ', 'հ', 'ｈ'],
-            'l': ['Ӏ', '１', 'ｌ'],
-            's': ['ѕ', 'ｓ'],
-            'y': ['у', 'ｙ'],
-        };
-        
         // Zero-width characters
         const zeroWidth = {
             zwj: '\u200D',     // Zero Width Joiner
@@ -271,23 +218,14 @@
             rlm: '\u200F',     // Right-to-Left Mark
         };
         
-        // Combining diacritical marks (dấu tiếng Việt rời)
-        const combiningMarks = {
-            acute: '\u0301',   // dấu sắc
-            grave: '\u0300',   // dấu huyền
-            hook: '\u0309',    // dấu hỏi
-            tilde: '\u0303',   // dấu ngã
-            dot: '\u0323',     // dấu nặng
-        };
-        
         // Unicode variation selectors
         const variations = ['\uFE00', '\uFE01', '\uFE02', '\uFE0E', '\uFE0F'];
         
-        // Invisible separators (ký tự phân cách vô hình)
+        // Invisible separators
         const invisibleSeparators = [
             '\u2060', // Word Joiner
             '\u2063', // Invisible Separator
-            '\uFEFF', // Zero Width No-Break Space (BOM)
+            '\uFEFF', // Zero Width No-Break Space
             '\u180E', // Mongolian Vowel Separator
         ];
         
@@ -307,57 +245,28 @@
         function encodeWatermark(text) {
             let encoded = text;
             
-            // 1. Apply Homoglyphs (100% áp dụng)
-            encoded = encoded.split('').map(char => {
-                const lower = char.toLowerCase();
-                if (homoglyphs[lower] && Math.random() > 0.2) {
-                    const variants = homoglyphs[lower];
-                    const chosen = variants[Math.floor(Math.random() * variants.length)];
-                    return char === char.toUpperCase() ? chosen.toUpperCase() : chosen;
-                }
-                return char;
-            }).join('');
+            // Chỉ dùng các phương pháp VÔ HÌNH - text đọc được bình thường
             
-            // 2. Add Zero-width characters
+            // 1. Add Zero-width characters
             const zwChars = Object.values(zeroWidth);
             encoded = encoded.split('').map((char, i) => {
-                if (i > 0 && Math.random() > 0.5) {
+                if (i > 0 && Math.random() > 0.3) {
                     const zw = zwChars[Math.floor(Math.random() * zwChars.length)];
                     return zw + char;
                 }
                 return char;
             }).join('');
             
-            // 3. Add Combining marks (dấu rời)
-            const marks = Object.values(combiningMarks);
+            // 2. Add Invisible separators
             encoded = encoded.split('').map((char, i) => {
-                if (/[aeiouAEIOU]/.test(char) && Math.random() > 0.4) {
-                    const mark = marks[Math.floor(Math.random() * marks.length)];
-                    return char + mark;
-                }
-                return char;
-            }).join('');
-            
-            // 4. Add Unicode variations
-            encoded = encoded.split('').map((char, i) => {
-                if (Math.random() > 0.6) {
-                    const variant = variations[Math.floor(Math.random() * variations.length)];
-                    return char + variant;
-                }
-                return char;
-            }).join('');
-            
-            // 5. Add Invisible separators (PHƯƠNG THỨC MỚI)
-            encoded = encoded.split('').map((char, i) => {
-                if (i > 0 && i < encoded.length - 1 && Math.random() > 0.7) {
+                if (i > 0 && i < encoded.length - 1 && Math.random() > 0.5) {
                     const sep = invisibleSeparators[Math.floor(Math.random() * invisibleSeparators.length)];
                     return char + sep;
                 }
                 return char;
             }).join('');
             
-            // 6. Add random whitespace variations (PHƯƠNG THỨC MỚI)
-            // Thay thế khoảng trắng thông thường bằng các loại space Unicode khác
+            // 3. Add random whitespace variations
             const spaceVariations = [
                 '\u0020', // Normal space
                 '\u00A0', // Non-breaking space
@@ -374,6 +283,15 @@
                 return word;
             }).join('');
             
+            // 4. Add Unicode variations
+            encoded = encoded.split('').map((char, i) => {
+                if (Math.random() > 0.6) {
+                    const variant = variations[Math.floor(Math.random() * variations.length)];
+                    return char + variant;
+                }
+                return char;
+            }).join('');
+            
             return encoded;
         }
         
@@ -387,72 +305,61 @@
             }
             
             if (!watermarkText) {
-                showStatusBottom('Vui lòng nhập nội dung watermark', 'info');
+                showStatusWatermark('Vui lòng nhập nội dung watermark', 'info');
                 return;
             }
             
-            // Save watermark text for next time
             saveWatermarkText(watermarkText);
             
-            // Tách văn bản thành các đoạn (phân tách bằng dòng trống hoặc dấu xuống dòng)
-            const paragraphs = output.value.split(/\n\s*\n/).filter(p => p.trim());
+            const lines = output.value.split('\n').filter(line => line.trim());
             
-            if (paragraphs.length < 2) {
-                showStatusBottom('Văn bản cần có ít nhất 2 đoạn văn để chèn watermark', 'info');
+            if (lines.length < 2) {
+                showStatusWatermark('Văn bản cần có ít nhất 2 dòng để chèn watermark', 'info');
                 return;
             }
             
-            // Giới hạn số watermark không vượt quá số đoạn văn - 1
-            const maxWatermarks = paragraphs.length - 1;
+            const maxWatermarks = lines.length - 1;
             const actualCount = Math.min(watermarkCount, maxWatermarks);
             
             if (actualCount < watermarkCount) {
-                showStatusBottom(`Văn bản chỉ có ${paragraphs.length} đoạn, chỉ có thể chèn tối đa ${maxWatermarks} watermark`, 'info');
+                showStatusWatermark(`Văn bản chỉ có ${lines.length} dòng, chỉ có thể chèn tối đa ${maxWatermarks} watermark`, 'info');
             }
             
-            // Tạo danh sách vị trí ngẫu nhiên để chèn watermark
             const availablePositions = Array.from({length: maxWatermarks}, (_, i) => i + 1);
-            
-            // Shuffle và chọn actualCount vị trí ngẫu nhiên
             const selectedPositions = [];
+            
             for (let i = 0; i < actualCount; i++) {
                 const randomIndex = Math.floor(Math.random() * availablePositions.length);
                 selectedPositions.push(availablePositions[randomIndex]);
                 availablePositions.splice(randomIndex, 1);
             }
             
-            // Sắp xếp vị trí để chèn từ trên xuống
             selectedPositions.sort((a, b) => a - b);
             
-            // Mã hóa watermark với độ khác nhau cho mỗi lần chèn
             let result = [];
             let watermarkIndex = 0;
             
-            for (let i = 0; i < paragraphs.length; i++) {
-                result.push(paragraphs[i]);
+            for (let i = 0; i < lines.length; i++) {
+                result.push(lines[i]);
                 
-                // Kiểm tra xem sau đoạn này có chèn watermark không
                 if (watermarkIndex < selectedPositions.length && 
                     selectedPositions[watermarkIndex] === i + 1) {
-                    
-                    // Mỗi watermark được mã hóa khác nhau (6 lớp bảo vệ)
-                    const encodedWatermark = '💧 ' + encodeWatermark(watermarkText) + ' 💧';
+                    const encodedWatermark = encodeWatermark(watermarkText);
                     result.push(encodedWatermark);
                     watermarkIndex++;
                 }
             }
             
-            output.value = result.join('\n\n');
-            
-            showStatusBottom(`Đã chèn ${actualCount} watermark vào văn bản`, 'success');
+            output.value = result.join('\n');
+            showStatusWatermark(`Đã chèn ${actualCount} watermark vào văn bản`, 'success');
         }
         
         function addWatermark() {
             addWatermarkAuto();
         }
         
-        function showStatusBottom(message, type) {
-            const status = document.getElementById('status-bottom');
+        function showStatusWatermark(message, type) {
+            const status = document.getElementById('status-watermark');
             status.innerHTML = message;
             status.className = `status ${type}`;
             
@@ -481,7 +388,6 @@
             let changesCount = 0;
             let changesList = [];
             
-            // BƯỚC 1: Xóa ký tự thừa theo regex
             const removeRegex = /[TtŤťṪṫṬṭṮṯṰṱŢţẗŦŧƭƬȚțŤťṬṭṰṱ][UuÚúÙùÛûÜüŨũŪūŬŭŮůŲųỤụỦủṲṳṴṵṶṷṸṹṺṻŰűŮůū́ŭų][\u0300-\u036F]*[\u2070-\u209F₀-₉ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥwₓᵧᶻ⁰-⁹¹²³⁴⁵⁶⁷⁸⁹ᵃ-ᶻ⁺⁻⁼⁽⁾₊₋₌₍₎]+/g;
             
             let match;
@@ -514,7 +420,6 @@
             fixedText = fixedText.replace(/[TtŤťṪṫṬṭṮṯṰṱŢţẗŦŧƭƬȚțŤťṬṭṰṱ][UuÚúÙùÛûÜüŨũŪūŬŭŮůŲųỤụỦủṲṳṴṵṶṷṸṹṺṻŰűŮůū́ŭų][\u0300-\u036F]*[\u2070-\u209F₀-₉ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥwₓᵧᶻ⁰-⁹¹²³⁴⁵⁶⁷⁸⁹ᵃ-ᶻ⁺⁻⁼⁽⁾₊₋₌₍₎]+/g, '');
             changesCount += removedCount;
             
-            // BƯỚC 2: Thay thế các ký tự bị lỗi encoding
             for (const [broken, correct] of Object.entries(charMap)) {
                 const regex = new RegExp(broken, 'g');
                 let matchChar;
@@ -590,7 +495,6 @@
                 showStatus('Không tìm thấy ký tự nào cần sửa', 'info');
             }
             
-            // Tự động thêm watermark sau khi fix text
             setTimeout(() => {
                 addWatermarkAuto();
             }, 100);
@@ -600,6 +504,7 @@
             document.getElementById('input').value = '';
             document.getElementById('output').value = '';
             document.getElementById('status').innerHTML = '';
+            document.getElementById('status-watermark').innerHTML = '';
             document.getElementById('changes-log').style.display = 'none';
         }
         
@@ -636,7 +541,6 @@
             }, 3000);
         }
         
-        // Auto-fix when typing (debounced)
         document.getElementById('input').addEventListener('input', function() {
             clearTimeout(this.timeout);
             this.timeout = setTimeout(() => {
@@ -646,12 +550,10 @@
             }, 500);
         });
         
-        // Load saved watermark text when page loads
         window.addEventListener('DOMContentLoaded', function() {
             loadWatermarkText();
         });
         
-        // Save watermark text when it changes
         document.getElementById('watermark-text').addEventListener('input', function() {
             saveWatermarkText(this.value);
         });
