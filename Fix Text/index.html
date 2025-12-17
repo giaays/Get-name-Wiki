@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công cụ sửa lỗi encoding văn bản</title>
+    <title>Công cụ sửa lỗi encoding & Watermark</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -40,9 +40,8 @@
             color: #2d3748;
         }
         
-        textarea {
+        textarea, input[type="text"] {
             width: 100%;
-            min-height: 150px;
             padding: 12px;
             border: 2px solid #e2e8f0;
             border-radius: 8px;
@@ -53,7 +52,11 @@
             box-sizing: border-box;
         }
         
-        textarea:focus {
+        textarea {
+            min-height: 150px;
+        }
+        
+        textarea:focus, input[type="text"]:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -62,6 +65,10 @@
         .buttons {
             text-align: center;
             margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
         }
         
         button {
@@ -73,7 +80,6 @@
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            margin: 0 10px;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
@@ -95,6 +101,10 @@
             background: linear-gradient(45deg, #38a169, #2f855a);
         }
         
+        .watermark-btn {
+            background: linear-gradient(45deg, #ed8936, #dd6b20);
+        }
+        
         .status {
             text-align: center;
             margin-top: 15px;
@@ -114,11 +124,50 @@
             color: #2b6cb0;
             border: 1px solid #90cdf4;
         }
+        
+        .watermark-section {
+            background: #fff7ed;
+            border: 2px solid #fed7aa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .watermark-section h3 {
+            color: #c05621;
+            margin-top: 0;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 10px 0;
+        }
+        
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            font-weight: normal;
+            cursor: pointer;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 5px;
+        }
+        
+        .hint {
+            font-size: 12px;
+            color: #718096;
+            font-style: italic;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔧 Công cụ sửa lỗi encoding văn bản</h1>
+        <h1>Công cụ sửa lỗi encoding & Watermark</h1>
         
         <div class="input-group">
             <label for="input">Nhập văn bản cần sửa:</label>
@@ -126,9 +175,9 @@
         </div>
         
         <div class="buttons">
-            <button onclick="fixText()">🔧 Sửa lỗi encoding</button>
-            <button onclick="clearText()" class="clear-btn">🗑️ Xóa</button>
-            <button onclick="copyResult()" class="copy-btn">📋 Copy kết quả</button>
+            <button onclick="fixText()">Sửa lỗi encoding</button>
+            <button onclick="clearText()" class="clear-btn">Xóa</button>
+            <button onclick="copyResult()" class="copy-btn">Copy kết quả</button>
         </div>
         
         <div class="input-group">
@@ -136,120 +185,262 @@
             <textarea id="output" readonly placeholder="Kết quả sẽ hiển thị ở đây..."></textarea>
         </div>
         
+        <!-- WATERMARK SECTION -->
+        <div class="watermark-section">
+            <h3>Watermark</h3>
+            
+            <div class="input-group">
+                <label for="watermark-text">Nội dung watermark:</label>
+                <input type="text" id="watermark-text" placeholder="VD: Bản quyền thuộc về ABC" value="Nguồn: Tài liệu nội bộ">
+            </div>
+            
+            <div class="input-group">
+                <label for="watermark-count">Số lượng watermark:</label>
+                <input type="number" id="watermark-count" min="1" max="50" value="5" style="width: 100px;">
+            </div>
+            
+            <div class="buttons">
+                <button onclick="addWatermark()" class="watermark-btn">Thêm Watermark</button>
+            </div>
+        </div>
+        
         <div id="status"></div>
         
         <div id="changes-log" style="display: none;">
             <div class="input-group">
-                <label>📋 Chi tiết thay đổi:</label>
+                <label>Chi tiết thay đổi:</label>
                 <div id="changes-content" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 14px;"></div>
             </div>
         </div>
     </div>
 
     <script>
-        // Bản đồ các ký tự bị lỗi encoding - chỉ những ký tự trông giống chữ gốc
+        // Bản đồ các ký tự bị lỗi encoding
         const charMap = {
-            // Các ký tự phổ biến bị lỗi encoding
-            '⼉': '儿',  // con
-            '⻝': '食',  // thức ăn
-            '⼦': '子',  // con trai  
-            '⻔': '门',  // cửa
-            '⽤': '用',  // dùng
-            '⽅': '方',  // phương
-            '⼜': '又',  // lại
-            '⼀': '一',  // một
-            '⼗': '十',  // mười
-            '⼤': '大',  // lớn
-            '⼈': '人',  // người
-            '⼊': '入',  // vào
-            '⼋': '八',  // tám
-            '⼒': '力',  // sức mạnh
-            '⼑': '刀',  // dao
-            '⼥': '女',  // nữ
-            '⼩': '小',  // nhỏ
-            '⼯': '工',  // công
-            '⼰': '己',  // bản thân
-            '⼱': '巾',  // khăn
-            '⼲': '干',  // khô
-            '⼴': '广',  // rộng
-            '⼸': '弓',  // cung
-            '⼼': '心',  // tim
-            '⼿': '手',  // tay
-            '⽀': '支',  // chi nhánh
-            '⽂': '文',  // văn
-            '⽇': '日',  // ngày
-            '⽉': '月',  // tháng
-            '⽊': '木',  // gỗ
-            '⽔': '水',  // nước
-            '⽕': '火',  // lửa
-            '⽗': '父',  // cha
-            '⽚': '片',  // mảnh
-            '⽛': '牙',  // răng
-            '⽜': '牛',  // bò
-            '⽝': '犬',  // chó
-            '⽟': '玉',  // ngọc
-            '⽡': '瓦',  // ngói
-            '⽢': '甘',  // ngọt
-            '⽣': '生',  // sinh
-            '⽥': '田',  // ruộng
-            '⽩': '白',  // trắng
-            '⽪': '皮',  // da
-            '⽫': '皿',  // đĩa
-            '⽬': '目',  // mắt
-            '⽯': '石',  // đá
-            '⽰': '示',  // chỉ
-            '⽲': '禾',  // lúa
-            '⽳': '穴',  // lỗ
-            '⽴': '立',  // đứng
-            '⽵': '竹',  // tre
-            '⽶': '米',  // gạo
-            '⽷': '糸',  // tơ
-            '⽹': '网',  // mạng
-            '⽺': '羊',  // cừu
-            '⽻': '羽',  // lông
-            '⽼': '老',  // già
-            '⽽': '而',  // mà
-            '⽿': '耳',  // tai
-            '⾁': '肉',  // thịt
-            '⾂': '臣',  // thần
-            '⾃': '自',  // tự
-            '⾄': '至',  // đến
-            '⾆': '舌',  // lưỡi
-            '⾈': '舟',  // thuyền
-            '⾊': '色',  // màu
-            '⾍': '虫',  // côn trúng
-            '⾎': '血',  // máu
-            '⾏': '行',  // hành
-            '⾐': '衣',  // quần áo
-            '⾓': '角',  // góc
-            '⾔': '言',  // nói
-            '⾕': '谷',  // thung lũng
-            '⾖': '豆',  // đậu
-            '⾙': '贝',  // vỏ sò
-            '⾚': '赤',  // đỏ
-            '⾛': '走',  // chạy
-            '⾜': '足',  // chân
-            '⾝': '身',  // thân
-            '⾞': '车',  // xe
-            '⾟': '辛',  // cay
-            '⾨': '门',  // cửa
-            '⾦': '金',  // vàng
-            '⾧': '长',  // dài
-            '⾬': '雨',  // mưa
-            '⾮': '非',  // phi
-            '⾯': '面',  // mặt
-            '⾷': '食',  // ăn
-            '⾸': '首',  // đầu
-            '⾹': '香',  // thơm
-            '⾻': '骨',  // xương
-            '⾼': '高',  // cao
-            '⾥': '里',  // trong/dặm
-            '⽆': '无',  // không có
-            '⻢': '马',  // mã
-            '⻅': '见',  // thấy
-            '⻆': '角',  // góc
-            '⻩': '黄',   // vàng (simplified)
+            '⼉': '儿', '⻝': '食', '⼦': '子', '⻔': '门', '⽤': '用', '⽅': '方', '⼜': '又', '⼀': '一',
+            '⼗': '十', '⼤': '大', '⼈': '人', '⼊': '入', '⼋': '八', '⼒': '力', '⼑': '刀', '⼥': '女',
+            '⼩': '小', '⼯': '工', '⼰': '己', '⼱': '巾', '⼲': '干', '⼴': '广', '⼸': '弓', '⼼': '心',
+            '⼿': '手', '⽀': '支', '⽂': '文', '⽇': '日', '⽉': '月', '⽊': '木', '⽔': '水', '⽕': '火',
+            '⽗': '父', '⽚': '片', '⽛': '牙', '⽜': '牛', '⽝': '犬', '⽟': '玉', '⽡': '瓦', '⽢': '甘',
+            '⽣': '生', '⽥': '田', '⽩': '白', '⽪': '皮', '⽫': '皿', '⽬': '目', '⽯': '石', '⽰': '示',
+            '⽲': '禾', '⽳': '穴', '⽴': '立', '⽵': '竹', '⽶': '米', '⽷': '糸', '⽹': '网', '⽺': '羊',
+            '⽻': '羽', '⽼': '老', '⽽': '而', '⽿': '耳', '⾁': '肉', '⾂': '臣', '⾃': '自', '⾄': '至',
+            '⾆': '舌', '⾈': '舟', '⾊': '色', '⾍': '虫', '⾎': '血', '⾏': '行', '⾐': '衣', '⾓': '角',
+            '⾔': '言', '⾕': '谷', '⾖': '豆', '⾙': '贝', '⾚': '赤', '⾛': '走', '⾜': '足', '⾝': '身',
+            '⾞': '车', '⾟': '辛', '⾨': '门', '⾦': '金', '⾧': '长', '⾬': '雨', '⾮': '非', '⾯': '面',
+            '⾷': '食', '⾸': '首', '⾹': '香', '⾻': '骨', '⾼': '高', '⾥': '里', '⽆': '无', '⻢': '马',
+            '⻅': '见', '⻆': '角', '⻩': '黄'
         };
+
+        // ======= WATERMARK FUNCTIONS =======
+        
+        // Bản đồ Homoglyphs (ký tự trông giống nhau)
+        const homoglyphs = {
+            'a': ['а', 'ạ', 'ά', 'α', 'ａ'],  // Latin a vs Cyrillic а vs Greek α
+            'e': ['е', 'ҽ', 'е́', 'ế', 'ｅ'],  // Latin e vs Cyrillic е
+            'o': ['о', 'ο', 'ο', 'ọ', 'ｏ'],  // Latin o vs Cyrillic о vs Greek ο
+            'c': ['с', 'ϲ', 'ⅽ', 'ｃ'],       // Latin c vs Cyrillic с
+            'i': ['і', 'ı', 'ɪ', 'ị', 'ｉ'],  // Latin i vs various
+            'u': ['υ', 'ս', 'ụ', 'ｕ'],       // Latin u vs Greek υ
+            'p': ['р', 'ρ', 'ｐ'],            // Latin p vs Cyrillic р
+            'n': ['п', 'ո', 'ｎ'],            // Latin n vs Cyrillic п
+            'B': ['В', 'Β', 'Ｂ'],            // Latin B vs Cyrillic В
+            'T': ['Т', 'Τ', 'Ｔ'],            // Latin T vs Cyrillic Т
+            'N': ['Ν', 'Ν', 'Ｎ'],            // Latin N vs Greek Ν
+            'g': ['ց', 'ɡ', 'ｇ'],
+            'h': ['һ', 'հ', 'ｈ'],
+            'l': ['Ӏ', '１', 'ｌ'],
+            's': ['ѕ', 'ｓ'],
+            'y': ['у', 'ｙ'],
+        };
+        
+        // Zero-width characters
+        const zeroWidth = {
+            zwj: '\u200D',     // Zero Width Joiner
+            zwnj: '\u200C',    // Zero Width Non-Joiner
+            zwsp: '\u200B',    // Zero Width Space
+            lrm: '\u200E',     // Left-to-Right Mark
+            rlm: '\u200F',     // Right-to-Left Mark
+        };
+        
+        // Combining diacritical marks (dấu tiếng Việt rời)
+        const combiningMarks = {
+            acute: '\u0301',   // dấu sắc
+            grave: '\u0300',   // dấu huyền
+            hook: '\u0309',    // dấu hỏi
+            tilde: '\u0303',   // dấu ngã
+            dot: '\u0323',     // dấu nặng
+        };
+        
+        // Unicode variation selectors
+        const variations = ['\uFE00', '\uFE01', '\uFE02', '\uFE0E', '\uFE0F'];
+        
+        // Invisible separators (ký tự phân cách vô hình)
+        const invisibleSeparators = [
+            '\u2060', // Word Joiner
+            '\u2063', // Invisible Separator
+            '\uFEFF', // Zero Width No-Break Space (BOM)
+            '\u180E', // Mongolian Vowel Separator
+        ];
+        
+        // Load saved watermark text
+        function loadWatermarkText() {
+            const saved = localStorage.getItem('watermarkText');
+            if (saved) {
+                document.getElementById('watermark-text').value = saved;
+            }
+        }
+        
+        // Save watermark text
+        function saveWatermarkText(text) {
+            localStorage.setItem('watermarkText', text);
+        }
+        
+        function encodeWatermark(text) {
+            let encoded = text;
+            
+            // 1. Apply Homoglyphs (100% áp dụng)
+            encoded = encoded.split('').map(char => {
+                const lower = char.toLowerCase();
+                if (homoglyphs[lower] && Math.random() > 0.2) {
+                    const variants = homoglyphs[lower];
+                    const chosen = variants[Math.floor(Math.random() * variants.length)];
+                    return char === char.toUpperCase() ? chosen.toUpperCase() : chosen;
+                }
+                return char;
+            }).join('');
+            
+            // 2. Add Zero-width characters
+            const zwChars = Object.values(zeroWidth);
+            encoded = encoded.split('').map((char, i) => {
+                if (i > 0 && Math.random() > 0.5) {
+                    const zw = zwChars[Math.floor(Math.random() * zwChars.length)];
+                    return zw + char;
+                }
+                return char;
+            }).join('');
+            
+            // 3. Add Combining marks (dấu rời)
+            const marks = Object.values(combiningMarks);
+            encoded = encoded.split('').map((char, i) => {
+                if (/[aeiouAEIOU]/.test(char) && Math.random() > 0.4) {
+                    const mark = marks[Math.floor(Math.random() * marks.length)];
+                    return char + mark;
+                }
+                return char;
+            }).join('');
+            
+            // 4. Add Unicode variations
+            encoded = encoded.split('').map((char, i) => {
+                if (Math.random() > 0.6) {
+                    const variant = variations[Math.floor(Math.random() * variations.length)];
+                    return char + variant;
+                }
+                return char;
+            }).join('');
+            
+            // 5. Add Invisible separators (PHƯƠNG THỨC MỚI)
+            encoded = encoded.split('').map((char, i) => {
+                if (i > 0 && i < encoded.length - 1 && Math.random() > 0.7) {
+                    const sep = invisibleSeparators[Math.floor(Math.random() * invisibleSeparators.length)];
+                    return char + sep;
+                }
+                return char;
+            }).join('');
+            
+            // 6. Add random whitespace variations (PHƯƠNG THỨC MỚI)
+            // Thay thế khoảng trắng thông thường bằng các loại space Unicode khác
+            const spaceVariations = [
+                '\u0020', // Normal space
+                '\u00A0', // Non-breaking space
+                '\u2002', // En space
+                '\u2003', // Em space
+                '\u2009', // Thin space
+                '\u200A', // Hair space
+            ];
+            encoded = encoded.split(' ').map((word, i) => {
+                if (i > 0) {
+                    const space = spaceVariations[Math.floor(Math.random() * spaceVariations.length)];
+                    return space + word;
+                }
+                return word;
+            }).join('');
+            
+            return encoded;
+        }
+        
+        function addWatermark() {
+            const output = document.getElementById('output');
+            const watermarkText = document.getElementById('watermark-text').value.trim();
+            const watermarkCount = parseInt(document.getElementById('watermark-count').value);
+            
+            if (!output.value.trim()) {
+                showStatus('Vui lòng xử lý văn bản trước khi thêm watermark', 'info');
+                return;
+            }
+            
+            if (!watermarkText) {
+                showStatus('Vui lòng nhập nội dung watermark', 'info');
+                return;
+            }
+            
+            // Save watermark text for next time
+            saveWatermarkText(watermarkText);
+            
+            // Tách văn bản thành các đoạn
+            const paragraphs = output.value.split('\n\n').filter(p => p.trim());
+            
+            if (paragraphs.length < 2) {
+                showStatus('Văn bản cần có ít nhất 2 đoạn văn để chèn watermark', 'info');
+                return;
+            }
+            
+            // Giới hạn số watermark không vượt quá số đoạn văn - 1
+            const maxWatermarks = paragraphs.length - 1;
+            const actualCount = Math.min(watermarkCount, maxWatermarks);
+            
+            if (actualCount < watermarkCount) {
+                showStatus(`Văn bản chỉ có ${paragraphs.length} đoạn, chỉ có thể chèn tối đa ${maxWatermarks} watermark`, 'info');
+            }
+            
+            // Tạo danh sách vị trí ngẫu nhiên để chèn watermark
+            const availablePositions = Array.from({length: maxWatermarks}, (_, i) => i + 1);
+            
+            // Shuffle và chọn actualCount vị trí ngẫu nhiên
+            const selectedPositions = [];
+            for (let i = 0; i < actualCount; i++) {
+                const randomIndex = Math.floor(Math.random() * availablePositions.length);
+                selectedPositions.push(availablePositions[randomIndex]);
+                availablePositions.splice(randomIndex, 1);
+            }
+            
+            // Sắp xếp vị trí để chèn từ trên xuống
+            selectedPositions.sort((a, b) => a - b);
+            
+            // Mã hóa watermark với độ khác nhau cho mỗi lần chèn
+            let result = [];
+            let watermarkIndex = 0;
+            
+            for (let i = 0; i < paragraphs.length; i++) {
+                result.push(paragraphs[i]);
+                
+                // Kiểm tra xem sau đoạn này có chèn watermark không
+                if (watermarkIndex < selectedPositions.length && 
+                    selectedPositions[watermarkIndex] === i + 1) {
+                    
+                    // Mỗi watermark được mã hóa khác nhau (6 lớp bảo vệ)
+                    const encodedWatermark = '💧 ' + encodeWatermark(watermarkText) + ' 💧';
+                    result.push(encodedWatermark);
+                    watermarkIndex++;
+                }
+            }
+            
+            output.value = result.join('\n\n');
+            
+            showStatus(`Đã chèn ${actualCount} watermark vào văn bản`, 'success');
+        }
+        
+        // ======= ORIGINAL FUNCTIONS =======
         
         function fixText() {
             const input = document.getElementById('input').value;
@@ -268,23 +459,18 @@
             let changesCount = 0;
             let changesList = [];
             
-            // BƯỚC 1: Xóa ký tự thừa theo regex (sẽ hiển thị ở đầu)
+            // BƯỚC 1: Xóa ký tự thừa theo regex
             const removeRegex = /[TtŤťṪṫṬṭṮṯṰṱŢţẗŦŧƭƬȚțŤťṬṭṰṱ][UuÚúÙùÛûÜüŨũŪūŬŭŮůŲųỤụỦủṲṳṴṵṶṷṸṹṺṻŰűŮůū́ŭų][\u0300-\u036F]*[\u2070-\u209F₀-₉ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥwₓᵧᶻ⁰-⁹¹²³⁴⁵⁶⁷⁸⁹ᵃ-ᶻ⁺⁻⁼⁽⁾₊₋₌₍₎]+/g;
             
             let match;
             let removedCount = 0;
             
-            // Tìm và ghi lại tất cả ký tự thừa trước khi xóa
             while ((match = removeRegex.exec(input)) !== null) {
                 removedCount++;
-                
-                // Tính vị trí
                 const beforeMatch = input.substring(0, match.index);
                 const lineNumber = beforeMatch.split('\n').length;
                 const lineStart = beforeMatch.lastIndexOf('\n') + 1;
                 const columnNumber = match.index - lineStart + 1;
-                
-                // Context
                 const start = Math.max(0, match.index - 5);
                 const end = Math.min(input.length, match.index + match[0].length + 5);
                 const context = input.substring(start, end);
@@ -303,7 +489,6 @@
                 removeRegex.lastIndex = match.index + 1;
             }
             
-            // Thực hiện xóa ký tự thừa
             fixedText = fixedText.replace(/[TtŤťṪṫṬṭṮṯṰṱŢţẗŦŧƭƬȚțŤťṬṭṰṱ][UuÚúÙùÛûÜüŨũŪūŬŭŮůŲųỤụỦủṲṳṴṵṶṷṸṹṺṻŰűŮůū́ŭų][\u0300-\u036F]*[\u2070-\u209F₀-₉ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥwₓᵧᶻ⁰-⁹¹²³⁴⁵⁶⁷⁸⁹ᵃ-ᶻ⁺⁻⁼⁽⁾₊₋₌₍₎]+/g, '');
             changesCount += removedCount;
             
@@ -312,17 +497,12 @@
                 const regex = new RegExp(broken, 'g');
                 let matchChar;
                 
-                // Tìm trong văn bản đã xóa ký tự thừa
                 while ((matchChar = regex.exec(fixedText)) !== null) {
                     changesCount++;
-                    
-                    // Tính vị trí (cần tính lại do đã xóa ký tự thừa)
                     const beforeMatch = fixedText.substring(0, matchChar.index);
                     const lineNumber = beforeMatch.split('\n').length;
                     const lineStart = beforeMatch.lastIndexOf('\n') + 1;
                     const columnNumber = matchChar.index - lineStart + 1;
-                    
-                    // Context trong văn bản đã xóa ký tự thừa
                     const start = Math.max(0, matchChar.index - 5);
                     const end = Math.min(fixedText.length, matchChar.index + 6);
                     const context = fixedText.substring(start, end);
@@ -341,14 +521,12 @@
                     regex.lastIndex = matchChar.index + 1;
                 }
                 
-                // Thực hiện thay thế
                 fixedText = fixedText.replace(new RegExp(broken, 'g'), correct);
             }
             
             output.value = fixedText;
             
             if (changesCount > 0) {
-                // Sắp xếp: ký tự bị xóa trước, ký tự thay thế sau
                 changesList.sort((a, b) => {
                     if (a.type !== b.type) {
                         return a.type === 'remove' ? -1 : 1;
@@ -356,19 +534,18 @@
                     return a.position - b.position;
                 });
                 
-                // Hiển thị chi tiết thay đổi
-                let changesHtml = `<div style="margin-bottom: 10px;"><strong>🔄 Tổng cộng: ${changesCount} thay đổi (${removedCount} xóa, ${changesCount - removedCount} thay thế)</strong></div>`;
+                let changesHtml = `<div style="margin-bottom: 10px;"><strong>Tổng cộng: ${changesCount} thay đổi (${removedCount} xóa, ${changesCount - removedCount} thay thế)</strong></div>`;
                 
                 changesList.forEach((change, index) => {
                     const isRemove = change.type === 'remove';
                     const bgColor = isRemove ? '#ffebee' : '#e3f2fd';
                     const borderColor = isRemove ? '#f44336' : '#667eea';
-                    const actionIcon = isRemove ? '🗑️' : '🔄';
+                    const actionIcon = isRemove ? 'XÓA' : 'THAY';
                     
                     changesHtml += `
                         <div style="border-left: 3px solid ${borderColor}; padding-left: 10px; margin-bottom: 10px; background: ${bgColor}; border-radius: 0 5px 5px 0;">
                             <div style="color: #666; font-size: 12px; margin-bottom: 5px;">
-                                ${actionIcon} #${index + 1} • Dòng ${change.line}, cột ${change.column} • Vị trí ${change.position}
+                                ${actionIcon} #${index + 1} • Dòng ${change.line}, cột ${change.column}
                             </div>
                             <div style="margin-bottom: 5px;">
                                 <span style="color: ${isRemove ? '#d32f2f' : '#d32f2f'}; background: ${isRemove ? '#ffcdd2' : '#ffebee'}; padding: 2px 6px; border-radius: 3px; font-weight: bold;">${change.broken}</span>
@@ -385,10 +562,10 @@
                 changesContent.innerHTML = changesHtml;
                 changesLog.style.display = 'block';
                 
-                showStatus(`✅ Đã xử lý ${changesCount} thay đổi (${removedCount} xóa ký tự thừa, ${changesCount - removedCount} sửa encoding)!`, 'success');
+                showStatus(`Đã xử lý ${changesCount} thay đổi (${removedCount} xóa ký tự thừa, ${changesCount - removedCount} sửa encoding)`, 'success');
             } else {
                 changesLog.style.display = 'none';
-                showStatus('ℹ️ Không tìm thấy ký tự nào cần sửa.', 'info');
+                showStatus('Không tìm thấy ký tự nào cần sửa', 'info');
             }
         }
         
@@ -411,13 +588,12 @@
             
             try {
                 document.execCommand('copy');
-                showStatus('📋 Đã copy kết quả vào clipboard!', 'success');
+                showStatus('Đã copy kết quả vào clipboard', 'success');
             } catch (err) {
-                // Fallback cho các trình duyệt hiện đại
                 navigator.clipboard.writeText(output.value).then(() => {
-                    showStatus('📋 Đã copy kết quả vào clipboard!', 'success');
+                    showStatus('Đã copy kết quả vào clipboard', 'success');
                 }).catch(() => {
-                    showStatus('❌ Không thể copy. Vui lòng copy thủ công.', 'info');
+                    showStatus('Không thể copy. Vui lòng copy thủ công', 'info');
                 });
             }
         }
@@ -427,22 +603,30 @@
             status.innerHTML = message;
             status.className = `status ${type}`;
             
-            // Tự động ẩn sau 3 giây
             setTimeout(() => {
                 status.innerHTML = '';
                 status.className = '';
             }, 3000);
         }
         
-        // Tự động sửa khi người dùng nhập
+        // Auto-fix when typing (debounced)
         document.getElementById('input').addEventListener('input', function() {
-            // Debounce để tránh xử lý quá nhiều
             clearTimeout(this.timeout);
             this.timeout = setTimeout(() => {
                 if (this.value.trim()) {
                     fixText();
                 }
             }, 500);
+        });
+        
+        // Load saved watermark text when page loads
+        window.addEventListener('DOMContentLoaded', function() {
+            loadWatermarkText();
+        });
+        
+        // Save watermark text when it changes
+        document.getElementById('watermark-text').addEventListener('input', function() {
+            saveWatermarkText(this.value);
         });
     </script>
 </body>
