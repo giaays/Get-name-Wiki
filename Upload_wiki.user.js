@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wiki Tools - Upload File & Download Name
 // @namespace    http://tampermonkey.net/
-// @version      2.2
+// @version      2.2.1
 // @author       giaays
 // @updateURL    https://raw.githubusercontent.com/giaays/Get-name-Wiki/main/Upload_wiki.user.js
 // @downloadURL  https://raw.githubusercontent.com/giaays/Get-name-Wiki/main/Upload_wiki.user.js
