@@ -175,16 +175,6 @@
       <div id="status"></div>
       <div id="preview" class="preview" style="display: none;"></div>
     </div>
-
-    <div class="section">
-      <h2>🔖 Bookmarklet (Dành cho cao thủ)</h2>
-      <p>Kéo thả link này vào thanh bookmark để sử dụng trên bất kỳ trang nào:</p>
-      <div class="bookmarklet">
-        <a href="javascript:(()=>{try{let m=document.getElementById('mdListName');if(!m)return alert('❌ Không thấy nội dung.');let l=m.innerText.split('\n').map(x=>x.trim()).filter(x=>x.includes('=')&&!/(tổng số|lịch sử|đóng|total|history|close)/i.test(x)&&x.length>0);if(!l.length)return alert('❌ Không có dòng hợp lệ.');let t=document.title.replace(/[\\/:*?\"<>|]+/g,'_'),f=`name2_${t}.txt`,b=new Blob([l.join('\n')],{type:'text/plain'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=f;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u);alert('✅ Đã tải '+l.length+' tên!')}catch(e){alert('❌ Lỗi: '+e.message)}})()">
-          📚 Name Extractor Bookmarklet
-        </a>
-      </div>
-    </div>
   </div>
 
   <script>
@@ -203,10 +193,10 @@
       // Tìm element có id="mdListName" trong HTML
       const parser = new DOMParser();
       const doc = parser.parseFromString(content, 'text/html');
-      const mdListName = doc.getElementById('mdListName');
+      const mdListName = doc.getElementById('ddListName');
       
       if (!mdListName) {
-        throw new Error('Không tìm thấy element #mdListName trong trang');
+        throw new Error('Không tìm thấy element #ddListName trong trang');
       }
 
       // Lấy text content và xử lý để lấy format "原文=Tiếng Việt"
