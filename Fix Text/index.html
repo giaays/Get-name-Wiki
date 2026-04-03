@@ -199,7 +199,7 @@
             '⽗': '父', '⽚': '片', '⽛': '牙', '⽜': '牛', '⽝': '犬', '⽟': '玉', '⽡': '瓦', '⽢': '甘',
             '⽣': '生', '⽥': '田', '⽩': '白', '⽪': '皮', '⽫': '皿', '⽬': '目', '⽯': '石', '⽰': '示',
             '⽲': '禾', '⽳': '穴', '⽴': '立', '⽵': '竹', '⽶': '米', '⽷': '糸', '⽹': '网', '⽺': '羊',
-            '⽻': '羽', '⽼': '老', '⽽': '而', '⽿': '耳', '⾁': '肉', '⾂': '臣', '⾃': '自', '⾄': '至',
+            '⽻': '羽', '⽼': '老', '⽾': '而', '⽿': '耳', '⾁': '肉', '⾂': '臣', '⾃': '自', '⾄': '至',
             '⾆': '舌', '⾈': '舟', '⾊': '色', '⾍': '虫', '⾎': '血', '⾏': '行', '⾐': '衣', '⾓': '角',
             '⾔': '言', '⾕': '谷', '⾖': '豆', '⾙': '贝', '⾚': '赤', '⾛': '走', '⾜': '足', '⾝': '身',
             '⾞': '车', '⾟': '辛', '⾨': '门', '⾦': '金', '⾧': '长', '⾬': '雨', '⾮': '非', '⾯': '面',
@@ -368,7 +368,106 @@
                 status.className = '';
             }, 3000);
         }
-        
+
+        // ======= SPAM BOT WATERMARK REMOVAL =======
+
+        /**
+         * Kiểm tra một dòng có phải là rác spam bot tiếng Trung không.
+         * Nhận diện dựa trên các từ khóa đặc trưng của loại spam này:
+         * - 虎bot / 虎b?t / 小虎 / xiAO HU / xiao hu (tên bot)
+         * - 文件防盗印 (chống in lậu tài liệu)
+         * - 找书机器人 (bot tìm sách)
+         * - 稳定靠谱 / 不踩坑 / 不踩雷 (cụm từ quảng cáo)
+         * Các biến thể có thể chèn: ?, ·, 丶, ●, [], khoảng trắng, ký tự ngẫu nhiên xen kẽ
+         */
+        function isSpamBotLine(line) {
+            // Loại bỏ các ký tự nhiễu phổ biến để so sánh thuần túy
+            // Giữ lại chữ Hán, Latin, dấu câu chính
+            const stripped = line
+                .replace(/[?\[\]·●丶\s]/g, '')  // bỏ ký tự nhiễu
+                .replace(/[\u200B-\u200F\u2060\u2063\uFEFF\u180E]/g, ''); // bỏ zero-width
+
+            // Từ khóa đặc trưng - chỉ cần khớp 2+ từ là xác định spam
+            const keywords = [
+                /文件防盗印/,
+                /找书机器人/,
+                /稳定靠谱/,
+                /不踩[坑雷]/,
+                /小虎bot/i,
+                /虎bot/i,
+                /xiaohu/i,
+                /xiAOHU/i,
+                /找丶书/,
+                /防丶盗/,
+                /稳丶定/,
+            ];
+
+            let matchCount = 0;
+            for (const kw of keywords) {
+                if (kw.test(stripped)) matchCount++;
+                if (matchCount >= 2) return true;
+            }
+
+            // Fallback: dòng chứa pattern ?X?Y?Z? (mỗi ký tự bị bọc bởi ?) với nội dung Trung
+            // Dấu hiệu: > 30% ký tự là '?' và có chữ Hán
+            const questionMarkRatio = (line.match(/\?/g) || []).length / line.length;
+            if (questionMarkRatio > 0.3 && /[\u4e00-\u9fff]/.test(line)) return true;
+
+            return false;
+        }
+
+        /**
+         * Kiểm tra dòng có phải là "đuôi rác" (phần thừa của dòng spam trước không?)
+         * Các dạng:
+         *   - Dòng chỉ có "?" hoặc "？" (dấu hỏi Unicode full-width)
+         *   - Dòng chỉ có "]" hoặc "[]" (phần đóng bracket thừa)
+         *   - Dòng chỉ có khoảng trắng + những ký tự trên
+         */
+        function isSpamTailLine(line) {
+            const trimmed = line.trim();
+            // Dòng rỗng sau khi trim không tính là đuôi rác (giữ nguyên dòng trống bình thường)
+            if (trimmed === '') return false;
+            // Chỉ gồm ?, ？, ], [, khoảng trắng
+            return /^[\?\？\[\]\s]+$/.test(trimmed);
+        }
+
+        /**
+         * Xóa toàn bộ dòng spam bot và đuôi rác đi kèm.
+         * Logic:
+         *   1. Duyệt từng dòng
+         *   2. Nếu dòng là spam → bỏ, đánh dấu "vừa xóa spam"
+         *   3. Nếu dòng là đuôi rác VÀ dòng trước vừa bị xóa → bỏ tiếp
+         *   4. Ngược lại → giữ
+         */
+        function removeSpamBotLines(text) {
+            const lines = text.split('\n');
+            const result = [];
+            let prevWasSpam = false;
+            let removedCount = 0;
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+
+                if (isSpamBotLine(line)) {
+                    removedCount++;
+                    prevWasSpam = true;
+                    // Không push vào result → xóa dòng này
+                    continue;
+                }
+
+                if (prevWasSpam && isSpamTailLine(line)) {
+                    removedCount++;
+                    // Giữ prevWasSpam = true để xóa tiếp nếu có nhiều dòng đuôi liên tiếp
+                    continue;
+                }
+
+                result.push(line);
+                prevWasSpam = false;
+            }
+
+            return { text: result.join('\n'), count: removedCount };
+        }
+
         // ======= ORIGINAL FUNCTIONS =======
         
         function fixText() {
@@ -387,21 +486,38 @@
             let fixedText = input;
             let changesCount = 0;
             let changesList = [];
+
+            // ===== BƯỚC 0: Xóa spam bot watermark tiếng Trung =====
+            const spamResult = removeSpamBotLines(fixedText);
+            fixedText = spamResult.text;
+            const spamRemovedCount = spamResult.count;
+            changesCount += spamRemovedCount;
+            if (spamRemovedCount > 0) {
+                changesList.push({
+                    type: 'spam',
+                    broken: `${spamRemovedCount} dòng spam bot`,
+                    correct: '[XÓA]',
+                    line: 0,
+                    column: 0,
+                    context: `Đã xóa ${spamRemovedCount} dòng spam/watermark bot tiếng Trung`,
+                    position: -1
+                });
+            }
             
             const removeRegex = /[TtŤťṪṫṬṭṮṯṰṱŢţẗŦŧƭƬȚțŤťṬṭṰṱ][UuÚúÙùÛûÜüŨũŪūŬŭŮůŲųỤụỦủṲṳṴṵṶṷṸṹṺṻŰűŮůū́ŭų][\u0300-\u036F]*[\u2070-\u209F₀-₉ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥwₓᵧᶻ⁰-⁹¹²³⁴⁵⁶⁷⁸⁹ᵃ-ᶻ⁺⁻⁼⁽⁾₊₋₌₍₎]+/g;
             
             let match;
             let removedCount = 0;
             
-            while ((match = removeRegex.exec(input)) !== null) {
+            while ((match = removeRegex.exec(fixedText)) !== null) {
                 removedCount++;
-                const beforeMatch = input.substring(0, match.index);
+                const beforeMatch = fixedText.substring(0, match.index);
                 const lineNumber = beforeMatch.split('\n').length;
                 const lineStart = beforeMatch.lastIndexOf('\n') + 1;
                 const columnNumber = match.index - lineStart + 1;
                 const start = Math.max(0, match.index - 5);
-                const end = Math.min(input.length, match.index + match[0].length + 5);
-                const context = input.substring(start, end);
+                const end = Math.min(fixedText.length, match.index + match[0].length + 5);
+                const context = fixedText.substring(start, end);
                 const contextHighlighted = context.replace(match[0], `<mark style="background: #ff5722; color: white; font-weight: bold;">${match[0]}</mark>`);
                 
                 changesList.push({
@@ -455,29 +571,33 @@
             
             if (changesCount > 0) {
                 changesList.sort((a, b) => {
+                    if (a.type === 'spam') return -1;
+                    if (b.type === 'spam') return 1;
                     if (a.type !== b.type) {
                         return a.type === 'remove' ? -1 : 1;
                     }
                     return a.position - b.position;
                 });
                 
-                let changesHtml = `<div style="margin-bottom: 10px;"><strong>Tổng cộng: ${changesCount} thay đổi (${removedCount} xóa, ${changesCount - removedCount} thay thế)</strong></div>`;
+                const totalEncoding = changesCount - spamRemovedCount;
+                let changesHtml = `<div style="margin-bottom: 10px;"><strong>Tổng cộng: ${changesCount} thay đổi (${spamRemovedCount} dòng spam bot, ${removedCount} xóa ký tự thừa, ${totalEncoding - removedCount} sửa encoding)</strong></div>`;
                 
                 changesList.forEach((change, index) => {
                     const isRemove = change.type === 'remove';
-                    const bgColor = isRemove ? '#ffebee' : '#e3f2fd';
-                    const borderColor = isRemove ? '#f44336' : '#667eea';
-                    const actionIcon = isRemove ? 'XÓA' : 'THAY';
+                    const isSpam = change.type === 'spam';
+                    const bgColor = isSpam ? '#fce4ec' : isRemove ? '#ffebee' : '#e3f2fd';
+                    const borderColor = isSpam ? '#e91e63' : isRemove ? '#f44336' : '#667eea';
+                    const actionIcon = isSpam ? 'SPAM' : isRemove ? 'XÓA' : 'THAY';
                     
                     changesHtml += `
                         <div style="border-left: 3px solid ${borderColor}; padding-left: 10px; margin-bottom: 10px; background: ${bgColor}; border-radius: 0 5px 5px 0;">
                             <div style="color: #666; font-size: 12px; margin-bottom: 5px;">
-                                ${actionIcon} #${index + 1} • Dòng ${change.line}, cột ${change.column}
+                                ${actionIcon} #${index + 1}${change.line > 0 ? ` • Dòng ${change.line}, cột ${change.column}` : ''}
                             </div>
                             <div style="margin-bottom: 5px;">
-                                <span style="color: ${isRemove ? '#d32f2f' : '#d32f2f'}; background: ${isRemove ? '#ffcdd2' : '#ffebee'}; padding: 2px 6px; border-radius: 3px; font-weight: bold;">${change.broken}</span>
+                                <span style="color: #d32f2f; background: #ffcdd2; padding: 2px 6px; border-radius: 3px; font-weight: bold;">${change.broken}</span>
                                 <span style="margin: 0 8px; color: #666;">→</span>
-                                <span style="color: ${isRemove ? '#d32f2f' : '#2e7d32'}; background: ${isRemove ? '#ffcdd2' : '#e8f5e8'}; padding: 2px 6px; border-radius: 3px; font-weight: bold;">${change.correct}</span>
+                                <span style="color: ${isRemove || isSpam ? '#d32f2f' : '#2e7d32'}; background: ${isRemove || isSpam ? '#ffcdd2' : '#e8f5e8'}; padding: 2px 6px; border-radius: 3px; font-weight: bold;">${change.correct}</span>
                             </div>
                             <div style="color: #555; font-size: 13px;">
                                 <strong>Context:</strong> ${change.context}
@@ -489,7 +609,7 @@
                 changesContent.innerHTML = changesHtml;
                 changesLog.style.display = 'block';
                 
-                showStatus(`Đã xử lý ${changesCount} thay đổi (${removedCount} xóa ký tự thừa, ${changesCount - removedCount} sửa encoding)`, 'success');
+                showStatus(`Đã xử lý ${changesCount} thay đổi (${spamRemovedCount} dòng spam, ${removedCount} xóa ký tự thừa, ${totalEncoding - removedCount} sửa encoding)`, 'success');
             } else {
                 changesLog.style.display = 'none';
                 showStatus('Không tìm thấy ký tự nào cần sửa', 'info');
