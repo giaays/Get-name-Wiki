@@ -3,680 +3,543 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công cụ sửa lỗi encoding & Watermark</title>
+    <title>Fix Text</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #f5f5f3;
+            --white: #ffffff;
+            --border: #e5e5e3;
+            --border-dark: #d0d0ce;
+            --text: #1a1a1a;
+            --text-2: #666;
+            --text-3: #999;
+            --accent: #1a1a1a;
+            --tag-spam-bg: #fff0f0; --tag-spam: #d93025;
+            --tag-del-bg: #fff7e6;  --tag-del: #b45309;
+            --tag-fix-bg: #f0fdf4;  --tag-fix: #16a34a;
+            --mono: 'JetBrains Mono', monospace;
+            --sans: 'Inter', sans-serif;
+        }
+
+        html, body { height: 100%; }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
-        }
-        
-        .container {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        
-        h1 {
-            text-align: center;
-            color: #4a5568;
-            margin-bottom: 30px;
-            font-size: 2em;
-        }
-        
-        .input-group {
-            margin-bottom: 20px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #2d3748;
-        }
-        
-        textarea, input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            resize: vertical;
-            transition: border-color 0.3s ease;
-            box-sizing: border-box;
-        }
-        
-        textarea {
-            min-height: 150px;
-        }
-        
-        textarea:focus, input[type="text"]:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        .buttons {
-            text-align: center;
-            margin: 20px 0;
+            font-family: var(--sans);
+            background: var(--bg);
+            color: var(--text);
             display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
         }
-        
-        button {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
-            font-size: 16px;
+
+        /* ── HEADER ── */
+        .header {
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            padding: 0 20px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-shrink: 0;
+        }
+
+        .title {
+            font-size: 13px;
             font-weight: 600;
+            letter-spacing: -0.01em;
+            color: var(--text);
+        }
+
+        .header-sep { width: 1px; height: 16px; background: var(--border); }
+
+        .status-pill {
+            font-size: 11px;
+            font-weight: 500;
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: var(--bg);
+            color: var(--text-3);
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+        .status-pill.ok  { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+        .status-pill.err { background: #fff0f0; color: #d93025; border-color: #fecaca; }
+
+        .header-actions { margin-left: auto; display: flex; gap: 6px; }
+
+        .btn {
+            font-family: var(--sans);
+            font-size: 12px;
+            font-weight: 500;
+            padding: 5px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-dark);
+            background: var(--white);
+            color: var(--text-2);
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.12s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
-        
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        .btn:hover { background: var(--bg); color: var(--text); border-color: #bbb; }
+        .btn-copy {
+            background: var(--text);
+            color: var(--white);
+            border-color: var(--text);
         }
-        
-        button:active {
-            transform: translateY(0);
+        .btn-copy:hover { background: #333; color: var(--white); border-color: #333; }
+
+        /* ── MAIN ── */
+        .main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            overflow: hidden;
         }
-        
-        .clear-btn {
-            background: linear-gradient(45deg, #e53e3e, #c53030);
+
+        .pane {
+            display: flex;
+            flex-direction: column;
+            background: var(--white);
+            overflow: hidden;
         }
-        
-        .copy-btn {
-            background: linear-gradient(45deg, #38a169, #2f855a);
+
+        .pane + .pane {
+            border-left: 1px solid var(--border);
         }
-        
-        .watermark-btn {
-            background: linear-gradient(45deg, #ed8936, #dd6b20);
+
+        .pane-header {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
         }
-        
-        .status {
-            text-align: center;
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 5px;
+
+        .pane-label {
+            font-size: 11px;
             font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--text-3);
         }
-        
-        .success {
-            background: #c6f6d5;
-            color: #2f855a;
-            border: 1px solid #9ae6b4;
+
+        .pane-hint {
+            font-size: 11px;
+            color: var(--text-3);
+            margin-left: auto;
         }
-        
-        .info {
-            background: #bee3f8;
-            color: #2b6cb0;
-            border: 1px solid #90cdf4;
+
+        textarea {
+            flex: 1;
+            width: 100%;
+            border: none;
+            outline: none;
+            resize: none;
+            font-family: var(--mono);
+            font-size: 13px;
+            line-height: 1.75;
+            padding: 16px;
+            color: var(--text);
+            background: transparent;
+            caret-color: #1a1a1a;
         }
-        
-        .watermark-section {
-            background: #fff7ed;
-            border: 2px solid #fed7aa;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 20px;
+
+        textarea::placeholder { color: var(--text-3); font-family: var(--sans); font-size: 13px; }
+        #output { color: #1a5c2e; background: #fafffe; }
+
+        /* ── LOG ── */
+        .log-section {
+            background: var(--white);
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
+            display: none;
+            flex-direction: column;
+            max-height: 180px;
         }
-        
-        .watermark-section h3 {
-            color: #c05621;
-            margin-top: 0;
+        .log-section.visible { display: flex; }
+
+        .log-header {
+            padding: 7px 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 11px;
+            color: var(--text-3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
         }
+
+        .log-stat { display: flex; align-items: center; gap: 4px; }
+        .log-stat-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+        .log-body {
+            overflow-y: auto;
+            padding: 6px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .log-body::-webkit-scrollbar { width: 4px; }
+        .log-body::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 2px; }
+
+        .log-row {
+            display: grid;
+            grid-template-columns: 42px 64px 1fr 16px 80px;
+            align-items: center;
+            gap: 8px;
+            font-size: 11.5px;
+            font-family: var(--mono);
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .log-row:hover { background: var(--bg); }
+
+        .tag {
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            padding: 1px 5px;
+            border-radius: 3px;
+            text-align: center;
+        }
+        .tag-spam { background: var(--tag-spam-bg); color: var(--tag-spam); }
+        .tag-del  { background: var(--tag-del-bg);  color: var(--tag-del); }
+        .tag-fix  { background: var(--tag-fix-bg);  color: var(--tag-fix); }
+
+        .log-loc  { color: var(--text-3); font-size: 10.5px; }
+        .log-from { color: var(--tag-spam); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .log-arr  { color: var(--text-3); text-align: center; }
+        .log-to   { color: var(--tag-fix); }
+        .log-ctx  { grid-column: 1/-1; font-size: 10.5px; color: var(--text-3); padding-left: 50px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* ── WM BAR ── */
+        .wm-bar {
+            background: var(--white);
+            border-top: 1px solid var(--border);
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .wm-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-3);
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+        }
+
+        .wm-input {
+            font-family: var(--sans);
+            font-size: 12px;
+            border: 1px solid var(--border-dark);
+            border-radius: 6px;
+            padding: 4px 10px;
+            outline: none;
+            color: var(--text);
+            background: var(--bg);
+            flex: 1;
+            min-width: 140px;
+            transition: border-color 0.15s;
+        }
+        .wm-input:focus { border-color: #aaa; background: var(--white); }
+
+        .wm-count {
+            font-family: var(--sans);
+            font-size: 12px;
+            border: 1px solid var(--border-dark);
+            border-radius: 6px;
+            padding: 4px 8px;
+            outline: none;
+            color: var(--text);
+            background: var(--bg);
+            width: 54px;
+            transition: border-color 0.15s;
+        }
+        .wm-count:focus { border-color: #aaa; background: var(--white); }
+
+        .wm-note { font-size: 11px; color: var(--text-3); margin-left: auto; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Công cụ sửa lỗi encoding & Watermark</h1>
-        
-        <div class="input-group">
-            <label for="input">Nhập văn bản cần sửa:</label>
-            <textarea id="input" placeholder="Dán văn bản có lỗi encoding vào đây..."></textarea>
+
+<div class="header">
+    <span class="title">Fix Text</span>
+    <div class="header-sep"></div>
+    <span class="status-pill" id="status">sẵn sàng</span>
+    <div class="header-actions">
+        <button class="btn" onclick="clearAll()">✕ Xóa</button>
+        <button class="btn btn-copy" onclick="copyResult()">⎘ Copy kết quả</button>
+    </div>
+</div>
+
+<div class="main">
+    <div class="pane">
+        <div class="pane-header">
+            <span class="pane-label">Input</span>
+            <span class="pane-hint">Paste vào để tự động xử lý</span>
         </div>
-        
-        <div class="buttons">
-            <button onclick="fixText()">Sửa lỗi encoding</button>
-            <button onclick="clearText()" class="clear-btn">Xóa</button>
-            <button onclick="copyResult()" class="copy-btn">Copy kết quả</button>
-        </div>
-        
-        <div id="status"></div>
-        <div id="status-watermark"></div>
-        
-        <div class="input-group">
-            <label for="output">Kết quả sau khi sửa:</label>
-            <textarea id="output" readonly placeholder="Kết quả sẽ hiển thị ở đây..."></textarea>
-        </div>
-        
-        <div id="changes-log" style="display: none;">
-            <div class="input-group">
-                <label>Chi tiết thay đổi:</label>
-                <div id="changes-content" style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 14px;"></div>
-            </div>
-        </div>
-        
-        <!-- WATERMARK SECTION -->
-        <div class="watermark-section">
-            <h3>Watermark</h3>
-            
-            <div class="input-group">
-                <label for="watermark-text">Nội dung watermark:</label>
-                <input type="text" id="watermark-text" placeholder="VD: Bản quyền thuộc về ABC" value="Nguồn: Tài liệu nội bộ">
-            </div>
-            
-            <div class="input-group">
-                <label for="watermark-count">Số lượng watermark:</label>
-                <input type="number" id="watermark-count" min="1" max="50" value="2" style="width: 100px;">
-            </div>
-            
-            <div class="buttons">
-                <button onclick="addWatermark()" class="watermark-btn">Thêm Watermark</button>
-            </div>
-        </div>
+        <textarea id="input" placeholder="Dán văn bản vào đây..."></textarea>
     </div>
 
-    <script>
-        // Bản đồ các ký tự bị lỗi encoding
-        const charMap = {
-            '⼉': '儿', '⻝': '食', '⼦': '子', '⻔': '门', '⽤': '用', '⽅': '方', '⼜': '又', '⼀': '一',
-            '⼗': '十', '⼤': '大', '⼈': '人', '⼊': '入', '⼋': '八', '⼒': '力', '⼑': '刀', '⼥': '女',
-            '⼩': '小', '⼯': '工', '⼰': '己', '⼱': '巾', '⼲': '干', '⼴': '广', '⼸': '弓', '⼼': '心',
-            '⼿': '手', '⽀': '支', '⽂': '文', '⽇': '日', '⽉': '月', '⽊': '木', '⽔': '水', '⽕': '火',
-            '⽗': '父', '⽚': '片', '⽛': '牙', '⽜': '牛', '⽝': '犬', '⽟': '玉', '⽡': '瓦', '⽢': '甘',
-            '⽣': '生', '⽥': '田', '⽩': '白', '⽪': '皮', '⽫': '皿', '⽬': '目', '⽯': '石', '⽰': '示',
-            '⽲': '禾', '⽳': '穴', '⽴': '立', '⽵': '竹', '⽶': '米', '⽷': '糸', '⽹': '网', '⽺': '羊',
-            '⽻': '羽', '⽼': '老', '⽾': '而', '⽿': '耳', '⾁': '肉', '⾂': '臣', '⾃': '自', '⾄': '至',
-            '⾆': '舌', '⾈': '舟', '⾊': '色', '⾍': '虫', '⾎': '血', '⾏': '行', '⾐': '衣', '⾓': '角',
-            '⾔': '言', '⾕': '谷', '⾖': '豆', '⾙': '贝', '⾚': '赤', '⾛': '走', '⾜': '足', '⾝': '身',
-            '⾞': '车', '⾟': '辛', '⾨': '门', '⾦': '金', '⾧': '长', '⾬': '雨', '⾮': '非', '⾯': '面',
-            '⾷': '食', '⾸': '首', '⾹': '香', '⾻': '骨', '⾼': '高', '⾥': '里', '⽆': '无', '⻢': '马',
-            '⻅': '见', '⻆': '角', '⻩': '黄'
-        };
+    <div class="pane">
+        <div class="pane-header">
+            <span class="pane-label">Output</span>
+        </div>
+        <textarea id="output" readonly placeholder="Kết quả hiển thị ở đây..."></textarea>
+    </div>
+</div>
 
-        // ======= WATERMARK FUNCTIONS =======
-        
-        // Zero-width characters
-        const zeroWidth = {
-            zwj: '\u200D',     // Zero Width Joiner
-            zwnj: '\u200C',    // Zero Width Non-Joiner
-            zwsp: '\u200B',    // Zero Width Space
-            lrm: '\u200E',     // Left-to-Right Mark
-            rlm: '\u200F',     // Right-to-Left Mark
-        };
-        
-        // Unicode variation selectors
-        const variations = ['\uFE00', '\uFE01', '\uFE02', '\uFE0E', '\uFE0F'];
-        
-        // Invisible separators
-        const invisibleSeparators = [
-            '\u2060', // Word Joiner
-            '\u2063', // Invisible Separator
-            '\uFEFF', // Zero Width No-Break Space
-            '\u180E', // Mongolian Vowel Separator
-        ];
-        
-        // Load saved watermark text
-        function loadWatermarkText() {
-            const saved = localStorage.getItem('watermarkText');
-            if (saved) {
-                document.getElementById('watermark-text').value = saved;
-            }
+<div class="log-section" id="log-section">
+    <div class="log-header" id="log-header"></div>
+    <div class="log-body" id="log-body"></div>
+</div>
+
+<div class="wm-bar">
+    <span class="wm-label">Watermark</span>
+    <input class="wm-input" type="text" id="watermark-text" placeholder="Nội dung watermark..." value="Nguồn: Tài liệu nội bộ">
+    <input class="wm-count" type="number" id="watermark-count" min="1" max="50" value="2">
+    <span class="wm-note" id="wm-note">tự động chèn sau khi xử lý</span>
+</div>
+
+<script>
+    const charMap = {
+        '⼉':'儿','⻝':'食','⼦':'子','⻔':'门','⽤':'用','⽅':'方','⼜':'又','⼀':'一',
+        '⼗':'十','⼤':'大','⼈':'人','⼊':'入','⼋':'八','⼒':'力','⼑':'刀','⼥':'女',
+        '⼩':'小','⼯':'工','⼰':'己','⼱':'巾','⼲':'干','⼴':'广','⼸':'弓','⼼':'心',
+        '⼿':'手','⽀':'支','⽂':'文','⽇':'日','⽉':'月','⽊':'木','⽔':'水','⽕':'火',
+        '⽗':'父','⽚':'片','⽛':'牙','⽜':'牛','⽝':'犬','⽟':'玉','⽡':'瓦','⽢':'甘',
+        '⽣':'生','⽥':'田','⽩':'白','⽪':'皮','⽫':'皿','⽬':'目','⽯':'石','⽰':'示',
+        '⽲':'禾','⽳':'穴','⽴':'立','⽵':'竹','⽶':'米','⽷':'糸','⽹':'网','⽺':'羊',
+        '⽻':'羽','⽼':'老','⽾':'而','⽿':'耳','⾁':'肉','⾂':'臣','⾃':'自','⾄':'至',
+        '⾆':'舌','⾈':'舟','⾊':'色','⾍':'虫','⾎':'血','⾏':'行','⾐':'衣','⾓':'角',
+        '⾔':'言','⾕':'谷','⾖':'豆','⾙':'贝','⾚':'赤','⾛':'走','⾜':'足','⾝':'身',
+        '⾞':'车','⾟':'辛','⾨':'门','⾦':'金','⾧':'长','⾬':'雨','⾮':'非','⾯':'面',
+        '⾷':'食','⾸':'首','⾹':'香','⾻':'骨','⾼':'高','⾥':'里','⽆':'无','⻢':'马',
+        '⻅':'见','⻆':'角','⻩':'黄'
+    };
+
+    // ── WATERMARK ──
+    const zwChars = ['\u200D','\u200C','\u200B','\u200E','\u200F'];
+    const variations = ['\uFE00','\uFE01','\uFE02','\uFE0E','\uFE0F'];
+    const invisSeps = ['\u2060','\u2063','\uFEFF','\u180E'];
+    const spaceVars = ['\u0020','\u00A0','\u2002','\u2003','\u2009','\u200A'];
+
+    function loadWm() {
+        const s = localStorage.getItem('wmText');
+        if (s) document.getElementById('watermark-text').value = s;
+    }
+
+    function encodeWatermark(text) {
+        let e = text.split('').map((c,i) =>
+            i > 0 && Math.random() > 0.3 ? zwChars[Math.floor(Math.random()*zwChars.length)] + c : c
+        ).join('');
+        e = e.split('').map((c,i,a) =>
+            i > 0 && i < a.length-1 && Math.random() > 0.5 ? c + invisSeps[Math.floor(Math.random()*invisSeps.length)] : c
+        ).join('');
+        e = e.split(' ').map((w,i) => i > 0 ? spaceVars[Math.floor(Math.random()*spaceVars.length)] + w : w).join('');
+        e = e.split('').map(c => Math.random() > 0.6 ? c + variations[Math.floor(Math.random()*variations.length)] : c).join('');
+        return e;
+    }
+
+    function insertWatermark(text) {
+        const wt = document.getElementById('watermark-text').value.trim();
+        const wc = parseInt(document.getElementById('watermark-count').value) || 2;
+        if (!wt || !text.trim()) return text;
+        const lines = text.split('\n').filter(l => l.trim());
+        if (lines.length < 2) return text;
+        const maxWm = lines.length - 1;
+        const actual = Math.min(wc, maxWm);
+        const pool = Array.from({length: maxWm}, (_,i) => i+1);
+        const sel = [];
+        for (let i = 0; i < actual; i++) {
+            const ri = Math.floor(Math.random()*pool.length);
+            sel.push(pool[ri]); pool.splice(ri,1);
         }
-        
-        // Save watermark text
-        function saveWatermarkText(text) {
-            localStorage.setItem('watermarkText', text);
+        sel.sort((a,b) => a-b);
+        let result = [], wi = 0;
+        for (let i = 0; i < lines.length; i++) {
+            result.push(lines[i]);
+            if (wi < sel.length && sel[wi] === i+1) { result.push(encodeWatermark(wt)); wi++; }
         }
-        
-        function encodeWatermark(text) {
-            let encoded = text;
-            
-            // Chỉ dùng các phương pháp VÔ HÌNH - text đọc được bình thường
-            
-            // 1. Add Zero-width characters
-            const zwChars = Object.values(zeroWidth);
-            encoded = encoded.split('').map((char, i) => {
-                if (i > 0 && Math.random() > 0.3) {
-                    const zw = zwChars[Math.floor(Math.random() * zwChars.length)];
-                    return zw + char;
-                }
-                return char;
-            }).join('');
-            
-            // 2. Add Invisible separators
-            encoded = encoded.split('').map((char, i) => {
-                if (i > 0 && i < encoded.length - 1 && Math.random() > 0.5) {
-                    const sep = invisibleSeparators[Math.floor(Math.random() * invisibleSeparators.length)];
-                    return char + sep;
-                }
-                return char;
-            }).join('');
-            
-            // 3. Add random whitespace variations
-            const spaceVariations = [
-                '\u0020', // Normal space
-                '\u00A0', // Non-breaking space
-                '\u2002', // En space
-                '\u2003', // Em space
-                '\u2009', // Thin space
-                '\u200A', // Hair space
-            ];
-            encoded = encoded.split(' ').map((word, i) => {
-                if (i > 0) {
-                    const space = spaceVariations[Math.floor(Math.random() * spaceVariations.length)];
-                    return space + word;
-                }
-                return word;
-            }).join('');
-            
-            // 4. Add Unicode variations
-            encoded = encoded.split('').map((char, i) => {
-                if (Math.random() > 0.6) {
-                    const variant = variations[Math.floor(Math.random() * variations.length)];
-                    return char + variant;
-                }
-                return char;
-            }).join('');
-            
-            return encoded;
-        }
-        
-        function addWatermarkAuto() {
-            const output = document.getElementById('output');
-            const watermarkText = document.getElementById('watermark-text').value.trim();
-            const watermarkCount = parseInt(document.getElementById('watermark-count').value);
-            
-            if (!output.value.trim()) {
-                return;
-            }
-            
-            if (!watermarkText) {
-                showStatusWatermark('Vui lòng nhập nội dung watermark', 'info');
-                return;
-            }
-            
-            saveWatermarkText(watermarkText);
-            
-            const lines = output.value.split('\n').filter(line => line.trim());
-            
-            if (lines.length < 2) {
-                showStatusWatermark('Văn bản cần có ít nhất 2 dòng để chèn watermark', 'info');
-                return;
-            }
-            
-            const maxWatermarks = lines.length - 1;
-            const actualCount = Math.min(watermarkCount, maxWatermarks);
-            
-            if (actualCount < watermarkCount) {
-                showStatusWatermark(`Văn bản chỉ có ${lines.length} dòng, chỉ có thể chèn tối đa ${maxWatermarks} watermark`, 'info');
-            }
-            
-            const availablePositions = Array.from({length: maxWatermarks}, (_, i) => i + 1);
-            const selectedPositions = [];
-            
-            for (let i = 0; i < actualCount; i++) {
-                const randomIndex = Math.floor(Math.random() * availablePositions.length);
-                selectedPositions.push(availablePositions[randomIndex]);
-                availablePositions.splice(randomIndex, 1);
-            }
-            
-            selectedPositions.sort((a, b) => a - b);
-            
-            let result = [];
-            let watermarkIndex = 0;
-            
-            for (let i = 0; i < lines.length; i++) {
-                result.push(lines[i]);
-                
-                if (watermarkIndex < selectedPositions.length && 
-                    selectedPositions[watermarkIndex] === i + 1) {
-                    const encodedWatermark = encodeWatermark(watermarkText);
-                    result.push(encodedWatermark);
-                    watermarkIndex++;
-                }
-            }
-            
-            output.value = result.join('\n');
-            showStatusWatermark(`Đã chèn ${actualCount} watermark vào văn bản`, 'success');
-        }
-        
-        function addWatermark() {
-            addWatermarkAuto();
-        }
-        
-        function showStatusWatermark(message, type) {
-            const status = document.getElementById('status-watermark');
-            status.innerHTML = message;
-            status.className = `status ${type}`;
-            
-            setTimeout(() => {
-                status.innerHTML = '';
-                status.className = '';
-            }, 3000);
-        }
+        setWmNote(`Đã chèn ${actual} watermark`);
+        return result.join('\n');
+    }
 
-        // ======= SPAM BOT WATERMARK REMOVAL =======
+    // ── SPAM ──
+    function isSpamBotLine(line) {
+        const s = line.replace(/[?\[\]·●丶\s]/g,'').replace(/[\u200B-\u200F\u2060\u2063\uFEFF\u180E]/g,'');
+        const kws = [/文件防盗印/,/找书机器人/,/稳定靠谱/,/不踩[坑雷]/,/小虎bot/i,/虎bot/i,/xiaohu/i,/xiAOHU/i,/找丶书/,/防丶盗/,/稳丶定/];
+        let n = 0;
+        for (const k of kws) { if (k.test(s)) { n++; if (n >= 2) return true; } }
+        const qr = (line.match(/\?/g)||[]).length / line.length;
+        return qr > 0.3 && /[\u4e00-\u9fff]/.test(line);
+    }
 
-        /**
-         * Kiểm tra một dòng có phải là rác spam bot tiếng Trung không.
-         * Nhận diện dựa trên các từ khóa đặc trưng của loại spam này:
-         * - 虎bot / 虎b?t / 小虎 / xiAO HU / xiao hu (tên bot)
-         * - 文件防盗印 (chống in lậu tài liệu)
-         * - 找书机器人 (bot tìm sách)
-         * - 稳定靠谱 / 不踩坑 / 不踩雷 (cụm từ quảng cáo)
-         * Các biến thể có thể chèn: ?, ·, 丶, ●, [], khoảng trắng, ký tự ngẫu nhiên xen kẽ
-         */
-        function isSpamBotLine(line) {
-            // Loại bỏ các ký tự nhiễu phổ biến để so sánh thuần túy
-            // Giữ lại chữ Hán, Latin, dấu câu chính
-            const stripped = line
-                .replace(/[?\[\]·●丶\s]/g, '')  // bỏ ký tự nhiễu
-                .replace(/[\u200B-\u200F\u2060\u2063\uFEFF\u180E]/g, ''); // bỏ zero-width
+    function isSpamTailLine(line) {
+        const t = line.trim();
+        return t.length > 0 && /^[\?\？\[\]\s]+$/.test(t);
+    }
 
-            // Từ khóa đặc trưng - chỉ cần khớp 2+ từ là xác định spam
-            const keywords = [
-                /文件防盗印/,
-                /找书机器人/,
-                /稳定靠谱/,
-                /不踩[坑雷]/,
-                /小虎bot/i,
-                /虎bot/i,
-                /xiaohu/i,
-                /xiAOHU/i,
-                /找丶书/,
-                /防丶盗/,
-                /稳丶定/,
-            ];
-
-            let matchCount = 0;
-            for (const kw of keywords) {
-                if (kw.test(stripped)) matchCount++;
-                if (matchCount >= 2) return true;
-            }
-
-            // Fallback: dòng chứa pattern ?X?Y?Z? (mỗi ký tự bị bọc bởi ?) với nội dung Trung
-            // Dấu hiệu: > 30% ký tự là '?' và có chữ Hán
-            const questionMarkRatio = (line.match(/\?/g) || []).length / line.length;
-            if (questionMarkRatio > 0.3 && /[\u4e00-\u9fff]/.test(line)) return true;
-
-            return false;
-        }
-
-        /**
-         * Kiểm tra dòng có phải là "đuôi rác" (phần thừa của dòng spam trước không?)
-         * Các dạng:
-         *   - Dòng chỉ có "?" hoặc "？" (dấu hỏi Unicode full-width)
-         *   - Dòng chỉ có "]" hoặc "[]" (phần đóng bracket thừa)
-         *   - Dòng chỉ có khoảng trắng + những ký tự trên
-         */
-        function isSpamTailLine(line) {
-            const trimmed = line.trim();
-            // Dòng rỗng sau khi trim không tính là đuôi rác (giữ nguyên dòng trống bình thường)
-            if (trimmed === '') return false;
-            // Chỉ gồm ?, ？, ], [, khoảng trắng
-            return /^[\?\？\[\]\s]+$/.test(trimmed);
-        }
-
-        /**
-         * Xóa toàn bộ dòng spam bot và đuôi rác đi kèm.
-         * Logic:
-         *   1. Duyệt từng dòng
-         *   2. Nếu dòng là spam → bỏ, đánh dấu "vừa xóa spam"
-         *   3. Nếu dòng là đuôi rác VÀ dòng trước vừa bị xóa → bỏ tiếp
-         *   4. Ngược lại → giữ
-         */
-        function removeSpamBotLines(text) {
-            const lines = text.split('\n');
-            const result = [];
-            let prevWasSpam = false;
-            let removedCount = 0;
-
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i];
-
-                if (isSpamBotLine(line)) {
-                    removedCount++;
-                    prevWasSpam = true;
-                    // Không push vào result → xóa dòng này
-                    continue;
-                }
-
-                if (prevWasSpam && isSpamTailLine(line)) {
-                    removedCount++;
-                    // Giữ prevWasSpam = true để xóa tiếp nếu có nhiều dòng đuôi liên tiếp
-                    continue;
-                }
-
-                result.push(line);
-                prevWasSpam = false;
-            }
-
-            return { text: result.join('\n'), count: removedCount };
-        }
-
-        // ======= ORIGINAL FUNCTIONS =======
-        
-        function fixText() {
-            const input = document.getElementById('input').value;
-            const output = document.getElementById('output');
-            const status = document.getElementById('status');
-            const changesLog = document.getElementById('changes-log');
-            const changesContent = document.getElementById('changes-content');
-            
-            if (!input.trim()) {
-                showStatus('Vui lòng nhập văn bản cần sửa!', 'info');
-                changesLog.style.display = 'none';
-                return;
-            }
-            
-            let fixedText = input;
-            let changesCount = 0;
-            let changesList = [];
-
-            // ===== BƯỚC 0: Xóa spam bot watermark tiếng Trung =====
-            const spamResult = removeSpamBotLines(fixedText);
-            fixedText = spamResult.text;
-            const spamRemovedCount = spamResult.count;
-            changesCount += spamRemovedCount;
-            if (spamRemovedCount > 0) {
-                changesList.push({
-                    type: 'spam',
-                    broken: `${spamRemovedCount} dòng spam bot`,
-                    correct: '[XÓA]',
-                    line: 0,
-                    column: 0,
-                    context: `Đã xóa ${spamRemovedCount} dòng spam/watermark bot tiếng Trung`,
-                    position: -1
-                });
-            }
-            
-            const removeRegex = /[TtŤťṪṫṬṭṮṯṰṱŢţẗŦŧƭƬȚțŤťṬṭṰṱ][UuÚúÙùÛûÜüŨũŪūŬŭŮůŲųỤụỦủṲṳṴṵṶṷṸṹṺṻŰűŮůū́ŭų][\u0300-\u036F]*[\u2070-\u209F₀-₉ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥwₓᵧᶻ⁰-⁹¹²³⁴⁵⁶⁷⁸⁹ᵃ-ᶻ⁺⁻⁼⁽⁾₊₋₌₍₎]+/g;
-            
-            let match;
-            let removedCount = 0;
-            
-            while ((match = removeRegex.exec(fixedText)) !== null) {
-                removedCount++;
-                const beforeMatch = fixedText.substring(0, match.index);
-                const lineNumber = beforeMatch.split('\n').length;
-                const lineStart = beforeMatch.lastIndexOf('\n') + 1;
-                const columnNumber = match.index - lineStart + 1;
-                const start = Math.max(0, match.index - 5);
-                const end = Math.min(fixedText.length, match.index + match[0].length + 5);
-                const context = fixedText.substring(start, end);
-                const contextHighlighted = context.replace(match[0], `<mark style="background: #ff5722; color: white; font-weight: bold;">${match[0]}</mark>`);
-                
-                changesList.push({
-                    type: 'remove',
-                    broken: match[0],
-                    correct: '[XÓA]',
-                    line: lineNumber,
-                    column: columnNumber,
-                    context: contextHighlighted,
-                    position: match.index
-                });
-                
-                removeRegex.lastIndex = match.index + 1;
-            }
-            
-            fixedText = fixedText.replace(/[TtŤťṪṫṬṭṮṯṰṱŢţẗŦŧƭƬȚțŤťṬṭṰṱ][UuÚúÙùÛûÜüŨũŪūŬŭŮůŲųỤụỦủṲṳṴṵṶṷṸṹṺṻŰűŮůū́ŭų][\u0300-\u036F]*[\u2070-\u209F₀-₉ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥwₓᵧᶻ⁰-⁹¹²³⁴⁵⁶⁷⁸⁹ᵃ-ᶻ⁺⁻⁼⁽⁾₊₋₌₍₎]+/g, '');
-            changesCount += removedCount;
-            
-            for (const [broken, correct] of Object.entries(charMap)) {
-                const regex = new RegExp(broken, 'g');
-                let matchChar;
-                
-                while ((matchChar = regex.exec(fixedText)) !== null) {
-                    changesCount++;
-                    const beforeMatch = fixedText.substring(0, matchChar.index);
-                    const lineNumber = beforeMatch.split('\n').length;
-                    const lineStart = beforeMatch.lastIndexOf('\n') + 1;
-                    const columnNumber = matchChar.index - lineStart + 1;
-                    const start = Math.max(0, matchChar.index - 5);
-                    const end = Math.min(fixedText.length, matchChar.index + 6);
-                    const context = fixedText.substring(start, end);
-                    const contextHighlighted = context.replace(broken, `<mark style="background: #ffeb3b; color: #d32f2f; font-weight: bold;">${broken}</mark>`);
-                    
-                    changesList.push({
-                        type: 'replace',
-                        broken: broken,
-                        correct: correct,
-                        line: lineNumber,
-                        column: columnNumber,
-                        context: contextHighlighted,
-                        position: matchChar.index
-                    });
-                    
-                    regex.lastIndex = matchChar.index + 1;
-                }
-                
-                fixedText = fixedText.replace(new RegExp(broken, 'g'), correct);
-            }
-            
-            output.value = fixedText;
-            
-            if (changesCount > 0) {
-                changesList.sort((a, b) => {
-                    if (a.type === 'spam') return -1;
-                    if (b.type === 'spam') return 1;
-                    if (a.type !== b.type) {
-                        return a.type === 'remove' ? -1 : 1;
-                    }
-                    return a.position - b.position;
-                });
-                
-                const totalEncoding = changesCount - spamRemovedCount;
-                let changesHtml = `<div style="margin-bottom: 10px;"><strong>Tổng cộng: ${changesCount} thay đổi (${spamRemovedCount} dòng spam bot, ${removedCount} xóa ký tự thừa, ${totalEncoding - removedCount} sửa encoding)</strong></div>`;
-                
-                changesList.forEach((change, index) => {
-                    const isRemove = change.type === 'remove';
-                    const isSpam = change.type === 'spam';
-                    const bgColor = isSpam ? '#fce4ec' : isRemove ? '#ffebee' : '#e3f2fd';
-                    const borderColor = isSpam ? '#e91e63' : isRemove ? '#f44336' : '#667eea';
-                    const actionIcon = isSpam ? 'SPAM' : isRemove ? 'XÓA' : 'THAY';
-                    
-                    changesHtml += `
-                        <div style="border-left: 3px solid ${borderColor}; padding-left: 10px; margin-bottom: 10px; background: ${bgColor}; border-radius: 0 5px 5px 0;">
-                            <div style="color: #666; font-size: 12px; margin-bottom: 5px;">
-                                ${actionIcon} #${index + 1}${change.line > 0 ? ` • Dòng ${change.line}, cột ${change.column}` : ''}
-                            </div>
-                            <div style="margin-bottom: 5px;">
-                                <span style="color: #d32f2f; background: #ffcdd2; padding: 2px 6px; border-radius: 3px; font-weight: bold;">${change.broken}</span>
-                                <span style="margin: 0 8px; color: #666;">→</span>
-                                <span style="color: ${isRemove || isSpam ? '#d32f2f' : '#2e7d32'}; background: ${isRemove || isSpam ? '#ffcdd2' : '#e8f5e8'}; padding: 2px 6px; border-radius: 3px; font-weight: bold;">${change.correct}</span>
-                            </div>
-                            <div style="color: #555; font-size: 13px;">
-                                <strong>Context:</strong> ${change.context}
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                changesContent.innerHTML = changesHtml;
-                changesLog.style.display = 'block';
-                
-                showStatus(`Đã xử lý ${changesCount} thay đổi (${spamRemovedCount} dòng spam, ${removedCount} xóa ký tự thừa, ${totalEncoding - removedCount} sửa encoding)`, 'success');
+    function removeSpam(text) {
+        const lines = text.split('\n'), result = [], removed = [];
+        let prevSpam = false;
+        for (let i = 0; i < lines.length; i++) {
+            if (isSpamBotLine(lines[i])) {
+                removed.push({ ln: i+1, content: lines[i], type:'spam' });
+                prevSpam = true;
+            } else if (prevSpam && isSpamTailLine(lines[i])) {
+                removed.push({ ln: i+1, content: lines[i], type:'tail' });
             } else {
-                changesLog.style.display = 'none';
-                showStatus('Không tìm thấy ký tự nào cần sửa', 'info');
-            }
-            
-            setTimeout(() => {
-                addWatermarkAuto();
-            }, 100);
-        }
-        
-        function clearText() {
-            document.getElementById('input').value = '';
-            document.getElementById('output').value = '';
-            document.getElementById('status').innerHTML = '';
-            document.getElementById('status-watermark').innerHTML = '';
-            document.getElementById('changes-log').style.display = 'none';
-        }
-        
-        function copyResult() {
-            const output = document.getElementById('output');
-            if (!output.value.trim()) {
-                showStatus('Không có nội dung để copy!', 'info');
-                return;
-            }
-            
-            output.select();
-            output.setSelectionRange(0, 99999);
-            
-            try {
-                document.execCommand('copy');
-                showStatus('Đã copy kết quả vào clipboard', 'success');
-            } catch (err) {
-                navigator.clipboard.writeText(output.value).then(() => {
-                    showStatus('Đã copy kết quả vào clipboard', 'success');
-                }).catch(() => {
-                    showStatus('Không thể copy. Vui lòng copy thủ công', 'info');
-                });
+                result.push(lines[i]);
+                prevSpam = false;
             }
         }
-        
-        function showStatus(message, type) {
-            const status = document.getElementById('status');
-            status.innerHTML = message;
-            status.className = `status ${type}`;
-            
-            setTimeout(() => {
-                status.innerHTML = '';
-                status.className = '';
-            }, 3000);
+        return { text: result.join('\n'), removed };
+    }
+
+    // ── CORE ──
+    function process(input) {
+        if (!input.trim()) return { out: '', changes: [] };
+
+        let text = input;
+        const changes = [];
+
+        // Bước 0: spam
+        const { text: t0, removed } = removeSpam(text);
+        text = t0;
+        for (const r of removed) {
+            const p = r.content.length > 50 ? r.content.slice(0,50)+'…' : r.content;
+            changes.push({ type:'spam', from: p, to:'[xóa]', ln: r.ln, col:1, ctx: r.type==='tail'?'đuôi rác':'spam bot', pos:-1 });
         }
-        
-        document.getElementById('input').addEventListener('input', function() {
-            clearTimeout(this.timeout);
-            this.timeout = setTimeout(() => {
-                if (this.value.trim()) {
-                    fixText();
-                }
-            }, 500);
-        });
-        
-        window.addEventListener('DOMContentLoaded', function() {
-            loadWatermarkText();
-        });
-        
-        document.getElementById('watermark-text').addEventListener('input', function() {
-            saveWatermarkText(this.value);
-        });
-    </script>
+
+        // Bước 1: xóa ký tự thừa
+        const re1 = /[TtŤťṪṫṬṭṮṯṰṱŢţẗŦŧƭƬȚțŤťṬṭṰṱ][UuÚúÙùÛûÜüŨũŪūŬŭŮůŲųỤụỦủṲṳṴṵṶṷṸṹṺṻŰűŮůū́ŭų][\u0300-\u036F]*[\u2070-\u209F₀-₉ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥwₓᵧᶻ⁰-⁹¹²³⁴⁵⁶⁷⁸⁹ᵃ-ᶻ⁺⁻⁼⁽⁾₊₋₌₍₎]+/g;
+        let m;
+        while ((m = re1.exec(text)) !== null) {
+            const before = text.slice(0,m.index), ln = before.split('\n').length, ls = before.lastIndexOf('\n')+1;
+            changes.push({ type:'del', from: m[0], to:'[xóa]', ln, col: m.index-ls+1, ctx:'', pos: m.index });
+            re1.lastIndex = m.index+1;
+        }
+        text = text.replace(/[TtŤťṪṫṬṭṮṯṰṱŢţẗŦŧƭƬȚțŤťṬṭṰṱ][UuÚúÙùÛûÜüŨũŪūŬŭŮůŲųỤụỦủṲṳṴṵṶṷṸṹṺṻŰűŮůū́ŭų][\u0300-\u036F]*[\u2070-\u209F₀-₉ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥwₓᵧᶻ⁰-⁹¹²³⁴⁵⁶⁷⁸⁹ᵃ-ᶻ⁺⁻⁼⁽⁾₊₋₌₍₎]+/g,'');
+
+        // Bước 2: charmap
+        for (const [from, to] of Object.entries(charMap)) {
+            const re = new RegExp(from,'g'); let mc;
+            while ((mc = re.exec(text)) !== null) {
+                const before = text.slice(0,mc.index), ln = before.split('\n').length, ls = before.lastIndexOf('\n')+1;
+                changes.push({ type:'fix', from, to, ln, col: mc.index-ls+1, ctx:'', pos: mc.index });
+                re.lastIndex = mc.index+1;
+            }
+            text = text.replace(new RegExp(from,'g'), to);
+        }
+
+        return { out: text, changes };
+    }
+
+    function run() {
+        const input = document.getElementById('input').value;
+        if (!input.trim()) { clearAll(); return; }
+
+        const { out, changes } = process(input);
+        const final = insertWatermark(out);
+        document.getElementById('output').value = final;
+
+        renderLog(changes);
+
+        if (changes.length === 0) setStatus('không có thay đổi', '');
+        else setStatus(`${changes.length} thay đổi`, 'ok');
+    }
+
+    function renderLog(list) {
+        const sec = document.getElementById('log-section');
+        if (!list.length) { sec.classList.remove('visible'); return; }
+
+        list.sort((a,b) => { const o={spam:0,del:1,fix:2}; return o[a.type]-o[b.type] || a.pos-b.pos; });
+
+        const nS = list.filter(c=>c.type==='spam').length;
+        const nD = list.filter(c=>c.type==='del').length;
+        const nF = list.filter(c=>c.type==='fix').length;
+
+        document.getElementById('log-header').innerHTML = `
+            <span style="font-weight:600;color:#1a1a1a">${list.length} thay đổi</span>
+            ${nS ? `<span class="log-stat"><span class="log-stat-dot" style="background:#d93025"></span>${nS} spam</span>` : ''}
+            ${nD ? `<span class="log-stat"><span class="log-stat-dot" style="background:#b45309"></span>${nD} xóa</span>` : ''}
+            ${nF ? `<span class="log-stat"><span class="log-stat-dot" style="background:#16a34a"></span>${nF} sửa</span>` : ''}
+        `;
+
+        document.getElementById('log-body').innerHTML = list.map(c => {
+            const tc = c.type==='spam'?'tag-spam': c.type==='del'?'tag-del':'tag-fix';
+            const tl = c.type==='spam'?'SPAM': c.type==='del'?'XÓA':'FIX';
+            return `<div class="log-row">
+                <span class="tag ${tc}">${tl}</span>
+                <span class="log-loc">L${c.ln}:${c.col}</span>
+                <span class="log-from">${esc(c.from)}</span>
+                <span class="log-arr">→</span>
+                <span class="log-to">${esc(c.to)}</span>
+                ${c.ctx ? `<span class="log-ctx">${esc(c.ctx)}</span>` : ''}
+            </div>`;
+        }).join('');
+
+        sec.classList.add('visible');
+    }
+
+    function esc(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function setStatus(msg, cls) {
+        const el = document.getElementById('status');
+        el.textContent = msg;
+        el.className = 'status-pill' + (cls ? ' '+cls : '');
+    }
+
+    function setWmNote(msg) {
+        const el = document.getElementById('wm-note');
+        el.textContent = msg;
+        setTimeout(() => el.textContent = 'tự động chèn sau khi xử lý', 3000);
+    }
+
+    function clearAll() {
+        document.getElementById('input').value = '';
+        document.getElementById('output').value = '';
+        document.getElementById('log-section').classList.remove('visible');
+        setStatus('sẵn sàng', '');
+    }
+
+    function copyResult() {
+        const v = document.getElementById('output').value;
+        if (!v.trim()) { setStatus('output trống', 'err'); return; }
+        navigator.clipboard.writeText(v)
+            .then(() => setStatus('đã copy!', 'ok'))
+            .catch(() => { document.getElementById('output').select(); document.execCommand('copy'); setStatus('đã copy!', 'ok'); });
+    }
+
+    // Auto-run on input
+    let _t;
+    document.getElementById('input').addEventListener('input', () => {
+        clearTimeout(_t);
+        _t = setTimeout(run, 400);
+    });
+
+    // Watermark settings persistence
+    document.getElementById('watermark-text').addEventListener('input', function() {
+        localStorage.setItem('wmText', this.value);
+    });
+
+    window.addEventListener('DOMContentLoaded', loadWm);
+</script>
 </body>
 </html>
