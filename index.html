@@ -1,365 +1,296 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Name Extractor – TruyenWikiDich</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wiki Names Downloader</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      content: [],
+    }
+  </script>
+
   <style>
-    body { 
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-      padding: 20px; 
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #333;
-      min-height: 100vh;
+    @import "tailwindcss";
+    @custom-variant dark (&:where(.dark, .dark *));
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     }
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      background: rgba(255, 255, 255, 0.95);
-      padding: 30px;
-      border-radius: 15px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+
+    .output {
+      font-family: 'Consolas', 'Courier New', monospace;
+      line-height: 1.65;
     }
-    h1 {
-      text-align: center;
-      color: #4a5568;
-      margin-bottom: 10px;
-      font-size: 2.5em;
-    }
-    .subtitle {
-      text-align: center;
-      color: #718096;
-      margin-bottom: 30px;
-      font-style: italic;
-    }
-    .section {
-      margin-bottom: 25px;
-      padding: 20px;
-      background: #f8f9fa;
-      border-radius: 10px;
-      border-left: 4px solid #667eea;
-    }
-    input[type="text"] { 
-      width: 100%; 
-      padding: 12px; 
-      border: 2px solid #e2e8f0;
-      border-radius: 8px;
-      font-size: 16px;
-      transition: border-color 0.3s;
-    }
-    input[type="text"]:focus {
-      outline: none;
-      border-color: #667eea;
-    }
-    textarea { 
-      width: 100%; 
-      height: 150px; 
-      padding: 12px;
-      border: 2px solid #e2e8f0;
-      border-radius: 8px;
-      font-family: 'Courier New', monospace;
-      resize: vertical;
-      transition: border-color 0.3s;
-    }
-    textarea:focus {
-      outline: none;
-      border-color: #667eea;
-    }
-    button { 
-      padding: 12px 24px; 
-      margin: 10px 5px 10px 0; 
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: 600;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    button:hover { 
-      transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-    }
-    button:disabled {
-      background: #cbd5e0;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-    .status {
-      padding: 10px;
-      border-radius: 8px;
-      margin: 10px 0;
-      font-weight: 500;
-    }
-    .status.success {
-      background: #c6f6d5;
-      color: #22543d;
-      border: 1px solid #9ae6b4;
-    }
-    .status.error {
-      background: #fed7d7;
-      color: #742a2a;
-      border: 1px solid #fc8181;
-    }
-    .status.info {
-      background: #bee3f8;
-      color: #2a4365;
-      border: 1px solid #90cdf4;
-    }
-    .preview {
-      background: #fff;
-      border: 2px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 15px;
-      margin-top: 15px;
-      max-height: 200px;
-      overflow-y: auto;
-      font-family: 'Courier New', monospace;
-      font-size: 14px;
-      line-height: 1.4;
-    }
-    .count {
-      font-weight: bold;
-      color: #667eea;
-    }
-    .bookmarklet {
-      background: #2d3748;
-      color: #e2e8f0;
-      padding: 15px;
-      border-radius: 8px;
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
-      word-break: break-all;
-      margin-top: 10px;
-    }
-    .instruction {
-      background: #fff5cd;
-      border: 1px solid #f6e05e;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 20px;
+
+    .output::placeholder {
+      font-family: 'Segoe UI', system-ui, sans-serif;
     }
   </style>
 </head>
-<body>
-  <div class="container">
-    <h1>🚀 Name Extractor</h1>
-    <p class="subtitle">Trích xuất và tải danh sách tên nhân vật từ TruyenWikiDich một cách tự động</p>
+<body class="bg-zinc-50 dark:bg-slate-950 min-h-screen transition-colors">
 
-    <div class="instruction">
-      <strong>📝 Hướng dẫn sử dụng:</strong>
-      <ol>
-        <li><strong>Dán link</strong> trang Wiki của truyện vào ô bên dưới</li>
-        <li><strong>Ấn nút</strong> "Trích xuất từ link"</li>
-        <li><strong>Copy hoặc tải kết quả về</strong> - dùng nút Copy hoặc Tải xuống</li>
-      </ol>
+  <div class="max-w-4xl mx-auto py-10 px-4 sm:px-6">
+    
+    <!-- Header -->
+    <div class="text-center mb-10">
+      <h1 class="text-4xl font-bold text-slate-900 dark:text-white flex items-center justify-center gap-3 mb-3">
+        <i class="fas fa-download text-indigo-600"></i>
+        Wiki Names Downloader
+      </h1>
+      <p class="text-slate-600 dark:text-slate-400 text-lg">
+        Trích xuất danh sách tên từ Wikidth
+      </p>
     </div>
 
-    <div class="section">
-      <h2>🎯 Trích xuất tự động</h2>
-      <input id="linkInput" type="text" placeholder="Nhập link trang Wiki của truyện..." />
-      <br>
-      <button id="autoBtn">📥 Trích xuất từ link</button>
+    <!-- Main Card -->
+    <div class="bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 p-8">
+      
+      <!-- Input -->
+      <div class="mb-8">
+        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
+          Nhập link trang Wiki
+        </label>
+        <div class="flex gap-3">
+          <div class="relative flex-1">
+            <input 
+              id="urlInput" 
+              type="text"
+              class="w-full px-6 py-4 text-base border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-2xl focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-500/30 transition-all pr-12"
+              placeholder="https://wikicv.net/..."
+            >
+            <button 
+              id="clearBtn"
+              onclick="clearAll()"
+              class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors hidden">
+              <i class="fas fa-times text-2xl"></i>
+            </button>
+          </div>
+
+          <button 
+            onclick="handleLoad()"
+            class="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold rounded-2xl flex items-center justify-center gap-2 shadow-md min-w-[150px]">
+            <i class="fas fa-cloud-arrow-down"></i>
+            Get Names
+          </button>
+        </div>
+      </div>
+
+      <!-- Status -->
+      <div id="status" class="hidden mb-5 text-sm text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+        <i class="fas fa-spinner fa-spin"></i>
+        <span id="statusText">Đang xử lý...</span>
+      </div>
+
+      <!-- Result -->
+      <div>
+        <h3 id="resultTitle" class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">
+          Kết quả trích xuất
+        </h3>
+
+        <div class="flex gap-3 mb-4">
+          <button 
+            id="copyBtn"
+            onclick="copyToClipboard()"
+            class="hidden flex-1 sm:flex-none px-6 py-3 text-sm bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl flex items-center justify-center gap-2 font-medium">
+            <i class="fas fa-copy"></i>
+            Copy
+          </button>
+          <button 
+            id="downloadBtn"
+            onclick="downloadTxt()"
+            class="hidden flex-1 sm:flex-none px-6 py-3 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl flex items-center justify-center gap-2 font-medium">
+            <i class="fas fa-download"></i>
+            Download
+          </button>
+        </div>
+        
+        <textarea 
+          id="output" 
+          class="output w-full h-96 p-6 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-3xl text-slate-800 dark:text-slate-100 text-[15px] resize-y focus:outline-none focus:border-indigo-300 dark:focus:border-indigo-500 transition-all"
+          readonly
+          placeholder="Kết quả sẽ hiển thị tại đây..."></textarea>
+      </div>
     </div>
 
-
-
-    <div class="section">
-      <h2>💾 Kết quả và tải về</h2>
-      <input id="fileName" type="text" placeholder="Tên file (tự động tạo từ tiêu đề trang)" />
-      <br>
-      <button id="downloadBtn" disabled>📁 Tải xuống file TXT</button>
-      <button id="copyBtn" disabled>📋 Copy tất cả</button>
-      <div id="status"></div>
-      <div id="preview" class="preview" style="display: none;"></div>
+    <!-- Footer -->
+    <div class="text-center mt-12 text-slate-500 dark:text-slate-400 text-sm">
+      Developed by <span class="font-semibold text-slate-700 dark:text-slate-300">Giaychuidis</span>
     </div>
   </div>
 
+  <!-- Floating Dark Mode Button -->
+  <button 
+    id="darkToggle"
+    onclick="toggleDarkMode()"
+    class="fixed bottom-6 right-6 w-12 h-12 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-2xl shadow-lg flex items-center justify-center text-slate-600 dark:text-slate-300 transition-all active:scale-95 z-50">
+    <i id="themeIcon" class="fas fa-moon text-2xl"></i>
+  </button>
+
   <script>
-    let extractedNames = [];
-    let currentFileName = '';
+    let currentStoryName = "";
 
-    function showStatus(message, type = 'info') {
-      const statusDiv = document.getElementById('status');
-      statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
-      setTimeout(() => {
-        if (type !== 'success') statusDiv.innerHTML = '';
-      }, 5000);
+    function cleanFileName(str) {
+      if (!str) return "Truyen";
+      return str
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d").replace(/Đ/g, "D")
+        .replace(/[^a-zA-Z0-9\s_-]/g, "")
+        .replace(/\s+/g, "_")
+        .replace(/_+/g, "_")
+        .trim();
     }
 
-    function extractNamesFromWikiContent(content) {
-      // Tìm element có id="mdListName" trong HTML
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(content, 'text/html');
-      const mdListName = doc.getElementById('ddListName');
-      
-      if (!mdListName) {
-        throw new Error('Không tìm thấy element #ddListName trong trang');
-      }
-
-      // Lấy text content và xử lý để lấy format "原文=Tiếng Việt"
-      const lines = mdListName.innerText
-        .split('\n')
-        .map(x => x.trim())
-        .filter(x => {
-          // Lọc các dòng có dấu = và không chứa các từ loại trừ
-          return x.includes('=') && 
-                 !/(tổng số|lịch sử|đóng|total|history|close)/i.test(x) &&
-                 x.length > 0;
-        });
-
-      if (!lines.length) {
-        throw new Error('Không có dòng hợp lệ nào được tìm thấy');
-      }
-
-      return lines;
-    }
-
-
-
-    function generateFileName(title = '') {
-      const cleanTitle = title || document.title || 'TruyenWiki';
-      return `name2_${cleanTitle.replace(/[\\/:*?"<>|]+/g, '_')}.txt`;
-    }
-
-    function updatePreview(names) {
-      const preview = document.getElementById('preview');
-      const downloadBtn = document.getElementById('downloadBtn');
-      const copyBtn = document.getElementById('copyBtn');
-      
-      if (names.length > 0) {
-        preview.style.display = 'block';
-        // Hiển thị tất cả kết quả, không giới hạn
-        preview.innerHTML = `<strong class="count">Tìm thấy ${names.length} tên:</strong><br><br>` + 
-                           names.join('<br>');
-        downloadBtn.disabled = false;
-        copyBtn.disabled = false;
-        extractedNames = names;
-        showStatus(`✅ Trích xuất thành công ${names.length} tên!`, 'success');
-      } else {
-        preview.style.display = 'none';
-        downloadBtn.disabled = true;
-        copyBtn.disabled = true;
-        extractedNames = [];
-        showStatus('❌ Không tìm thấy tên nào!', 'error');
-      }
-    }
-
-    function downloadFile(filename, content) {
-      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-
-    // Trích xuất từ link
-    document.getElementById('autoBtn').addEventListener('click', async () => {
-      const link = document.getElementById('linkInput').value.trim();
-      if (!link) {
-        showStatus('❌ Vui lòng nhập link trang truyện!', 'error');
-        return;
-      }
-
-      showStatus('🔄 Đang tải trang...', 'info');
-      
+    function extractStoryNameFromUrl(url) {
       try {
-        // Thử nhiều cách để tránh CORS
-        let response;
-        let content;
-        
-        // Cách 1: Thử fetch trực tiếp
-        try {
-          response = await fetch(link);
-          content = await response.text();
-        } catch (corsError) {
-          // Cách 2: Sử dụng proxy khác
-          try {
-            const proxyUrl = `https://cors-anywhere.herokuapp.com/${link}`;
-            response = await fetch(proxyUrl);
-            content = await response.text();
-          } catch (proxyError) {
-            // Cách 3: Sử dụng allorigins
-            const allOriginsUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(link)}`;
-            response = await fetch(allOriginsUrl);
-            const data = await response.json();
-            content = data.contents;
+        const urlObj = new URL(url);
+        const pathParts = urlObj.pathname.split('/').filter(Boolean);
+        for (let part of pathParts) {
+          if (part.includes('-') && part.length > 10) {
+            const slug = part.replace(/-[A-Za-z0-9]{10,}$/, '');
+            if (slug) return slug.replace(/-/g, ' ');
           }
         }
-        
-        if (!content) {
-          throw new Error('Không thể tải nội dung trang');
-        }
+      } catch (e) {}
+      return null;
+    }
 
-        const names = extractNamesFromWikiContent(content);
-        
-        // Tạo tên file từ tiêu đề trang
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(content, 'text/html');
-        const title = doc.title || 'TruyenWiki';
-        currentFileName = generateFileName(title);
-        document.getElementById('fileName').value = currentFileName;
-        
-        updatePreview(names);
-        
-      } catch (error) {
-        console.error('Error:', error);
-        showStatus(`❌ Lỗi: ${error.message}`, 'error');
-      }
-    });
+    async function handleLoad() {
+      const urlInput = document.getElementById("urlInput");
+      const output = document.getElementById("output");
+      const status = document.getElementById("status");
+      const statusText = document.getElementById("statusText");
+      const copyBtn = document.getElementById("copyBtn");
+      const downloadBtn = document.getElementById("downloadBtn");
+      const resultTitle = document.getElementById("resultTitle");
 
-
-
-
-
-    // Copy tất cả kết quả
-    document.getElementById('copyBtn').addEventListener('click', async () => {
-      if (extractedNames.length === 0) {
-        showStatus('❌ Không có dữ liệu để copy!', 'error');
+      const url = urlInput.value.trim();
+      if (!url) {
+        alert("Vui lòng nhập link Wiki!");
         return;
       }
+
+      output.value = "";
+      copyBtn.classList.add("hidden");
+      downloadBtn.classList.add("hidden");
+      status.classList.remove("hidden");
+      statusText.textContent = "Đang tải trang Wiki...";
+      resultTitle.textContent = "Kết quả trích xuất";
 
       try {
-        await navigator.clipboard.writeText(extractedNames.join('\n'));
-        showStatus(`📋 Đã copy ${extractedNames.length} tên vào clipboard!`, 'success');
-      } catch (error) {
-        // Fallback cho trình duyệt không hỗ trợ clipboard API
-        const textArea = document.createElement('textarea');
-        textArea.value = extractedNames.join('\n');
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        showStatus(`📋 Đã copy ${extractedNames.length} tên vào clipboard!`, 'success');
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Không thể truy cập trang");
+
+        const html = await res.text();
+
+        let storyName = extractStoryNameFromUrl(url) ||
+                        (html.match(/<title>(.*?)<\/title>/i)?.[1]?.trim().replace(/ - .*$/, '') || "Unknown");
+
+        currentStoryName = cleanFileName(storyName);
+
+        const match = html.match(/bookId\s*=\s*"([a-f0-9]+)"/i);
+        if (!match) throw new Error("Không tìm thấy bookId");
+
+        const bookId = match[1];
+        statusText.textContent = `Đang lấy danh sách tên...`;
+
+        const apiRes = await fetch(`https://wikicv.net/name-list?bookId=${bookId}&id=COMMON`);
+        const data = await apiRes.json();
+
+        const content = data?.data?.content;
+        if (!content) throw new Error("Không có dữ liệu");
+
+        const names = [...content.matchAll(/data-ncn="(.*?)".*?data-nvi="(.*?)"/g)]
+          .map(m => `${m[1]}=${m[2]}`);
+
+        output.value = names.length ? names.join("\n") : "Không tìm thấy tên nào.";
+
+        if (names.length) {
+          resultTitle.textContent = `Kết quả trích xuất (${names.length} names)`;
+          copyBtn.classList.remove("hidden");
+          downloadBtn.classList.remove("hidden");
+        }
+      } catch (err) {
+        output.value = `❌ Lỗi: ${err.message}`;
+      } finally {
+        status.classList.add("hidden");
       }
+    }
+
+    function clearAll() {
+      document.getElementById("urlInput").value = "";
+      document.getElementById("output").value = "";
+      document.getElementById("copyBtn").classList.add("hidden");
+      document.getElementById("downloadBtn").classList.add("hidden");
+      document.getElementById("resultTitle").textContent = "Kết quả trích xuất";
+      document.getElementById("clearBtn").classList.add("hidden");
+    }
+
+    function downloadTxt() {
+      const output = document.getElementById("output");
+      if (!output.value) return;
+      const blob = new Blob([output.value], { type: "text/plain" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `Name2_${currentStoryName || "Truyen"}.txt`;
+      link.click();
+    }
+
+    async function copyToClipboard() {
+      const output = document.getElementById("output");
+      const copyBtn = document.getElementById("copyBtn");
+      if (!output.value) return;
+
+      await navigator.clipboard.writeText(output.value);
+      const original = copyBtn.innerHTML;
+      copyBtn.innerHTML = `<i class="fas fa-check"></i> Đã copy`;
+      copyBtn.classList.add("!bg-emerald-100", "!text-emerald-700", "dark:!bg-emerald-900", "dark:!text-emerald-300");
+
+      setTimeout(() => {
+        copyBtn.innerHTML = original;
+        copyBtn.classList.remove("!bg-emerald-100", "!text-emerald-700", "dark:!bg-emerald-900", "dark:!text-emerald-300");
+      }, 2000);
+    }
+
+    function toggleDarkMode() {
+      const html = document.documentElement;
+      html.classList.toggle('dark');
+      localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+      updateThemeIcon();
+    }
+
+    function updateThemeIcon() {
+      const icon = document.getElementById('themeIcon');
+      icon.className = document.documentElement.classList.contains('dark') 
+        ? 'fas fa-sun text-2xl' 
+        : 'fas fa-moon text-2xl';
+    }
+
+    window.addEventListener('load', () => {
+      const html = document.documentElement;
+      const saved = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+      if (saved === 'dark' || (!saved && prefersDark)) {
+        html.classList.add('dark');
+      }
+      updateThemeIcon();
+
+      const urlInput = document.getElementById("urlInput");
+      const clearBtn = document.getElementById("clearBtn");
+      urlInput.addEventListener("input", () => {
+        clearBtn.classList.toggle("hidden", !urlInput.value.trim());
+      });
     });
 
-    // Tải xuống file
-    document.getElementById('downloadBtn').addEventListener('click', () => {
-      if (extractedNames.length === 0) {
-        showStatus('❌ Không có dữ liệu để tải xuống!', 'error');
-        return;
-      }
-
-      let filename = document.getElementById('fileName').value.trim();
-      if (!filename) {
-        filename = currentFileName || 'names.txt';
-      } else if (!filename.endsWith('.txt')) {
-        filename += '.txt';
-      }
-
-      downloadFile(filename, extractedNames.join('\n'));
-      showStatus(`🎉 Đã tải xuống file "${filename}" với ${extractedNames.length} tên!`, 'success');
+    document.getElementById("urlInput").addEventListener("keypress", (e) => {
+      if (e.key === "Enter") handleLoad();
     });
-
-    // Tự động focus vào input đầu tiên
-    document.getElementById('linkInput').focus();
   </script>
 </body>
 </html>
