@@ -4,24 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fix Text</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --bg: #f5f5f3;
-            --white: #ffffff;
-            --border: #e5e5e3;
-            --border-dark: #d0d0ce;
-            --text: #1a1a1a;
-            --text-2: #666;
-            --text-3: #999;
-            --accent: #1a1a1a;
-            --tag-spam-bg: #fff0f0; --tag-spam: #d93025;
-            --tag-del-bg: #fff7e6;  --tag-del: #b45309;
-            --tag-fix-bg: #f0fdf4;  --tag-fix: #16a34a;
-            --mono: 'JetBrains Mono', monospace;
-            --sans: 'Inter', sans-serif;
+            --bg:        #f0ede8;
+            --panel:     #faf9f7;
+            --white:     #ffffff;
+            --border:    #e2ddd8;
+            --border-2:  #ccc8c2;
+            --text:      #1c1917;
+            --text-2:    #78716c;
+            --text-3:    #a8a29e;
+            --accent:    #c47c3e;
+            --accent-bg: #fdf5ec;
+            --green:     #3d7a52;
+            --green-bg:  #f0faf4;
+            --red:       #c0392b;
+            --red-bg:    #fef2f2;
+            --amber:     #92650a;
+            --amber-bg:  #fffbeb;
+            --mono: 'Geist Mono', 'JetBrains Mono', monospace;
+            --sans: 'Geist', 'Inter', sans-serif;
+            --radius: 10px;
         }
 
         html, body { height: 100%; }
@@ -30,113 +36,123 @@
             font-family: var(--sans);
             background: var(--bg);
             color: var(--text);
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            height: 100vh;
             overflow: hidden;
         }
 
-        /* ── HEADER ── */
-        .header {
-            background: var(--white);
-            border-bottom: 1px solid var(--border);
-            padding: 0 20px;
-            height: 48px;
+        /* ── TOPBAR ── */
+        .topbar {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 14px;
+            padding: 12px 20px;
             flex-shrink: 0;
         }
 
-        .title {
-            font-size: 13px;
+        .logo {
+            font-size: 15px;
             font-weight: 600;
-            letter-spacing: -0.01em;
+            letter-spacing: -0.02em;
             color: var(--text);
         }
 
-        .header-sep { width: 1px; height: 16px; background: var(--border); }
+        .logo span { color: var(--accent); }
 
-        .status-pill {
-            font-size: 11px;
+        .topbar-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+        .chip {
+            font-size: 11.5px;
             font-weight: 500;
-            padding: 3px 10px;
+            padding: 4px 11px;
             border-radius: 20px;
-            background: var(--bg);
-            color: var(--text-3);
-            border: 1px solid var(--border);
-            transition: all 0.2s;
+            border: 1px solid var(--border-2);
+            background: var(--panel);
+            color: var(--text-2);
+            transition: all 0.18s;
+            white-space: nowrap;
         }
-        .status-pill.ok  { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
-        .status-pill.err { background: #fff0f0; color: #d93025; border-color: #fecaca; }
-
-        .header-actions { margin-left: auto; display: flex; gap: 6px; }
+        .chip.ok    { background: var(--green-bg); color: var(--green); border-color: #a7d4b8; }
+        .chip.warn  { background: var(--amber-bg); color: var(--amber); border-color: #f5d78e; }
 
         .btn {
             font-family: var(--sans);
-            font-size: 12px;
+            font-size: 12.5px;
             font-weight: 500;
-            padding: 5px 12px;
-            border-radius: 6px;
-            border: 1px solid var(--border-dark);
-            background: var(--white);
+            padding: 6px 14px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-2);
+            background: var(--panel);
             color: var(--text-2);
             cursor: pointer;
-            transition: all 0.12s;
+            transition: all 0.14s;
             display: flex;
             align-items: center;
             gap: 5px;
         }
-        .btn:hover { background: var(--bg); color: var(--text); border-color: #bbb; }
-        .btn-copy {
+        .btn:hover { background: var(--white); color: var(--text); border-color: #aaa; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+
+        .btn-primary {
             background: var(--text);
-            color: var(--white);
+            color: #fff;
             border-color: var(--text);
         }
-        .btn-copy:hover { background: #333; color: var(--white); border-color: #333; }
+        .btn-primary:hover { background: #333; color: #fff; border-color: #333; }
+        .btn-primary.copied { background: var(--green); border-color: var(--green); cursor: default; }
 
-        /* ── MAIN ── */
-        .main {
+        /* ── WORKSPACE ── */
+        .workspace {
             flex: 1;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 0;
+            gap: 10px;
+            padding: 0 20px;
             overflow: hidden;
+            min-height: 0;
         }
 
-        .pane {
+        .card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
             display: flex;
             flex-direction: column;
-            background: var(--white);
             overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,.04);
         }
 
-        .pane + .pane {
-            border-left: 1px solid var(--border);
-        }
-
-        .pane-header {
-            padding: 10px 16px;
+        .card-head {
+            padding: 10px 14px;
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             gap: 8px;
             flex-shrink: 0;
+            background: var(--panel);
         }
 
-        .pane-label {
+        .card-label {
             font-size: 11px;
             font-weight: 600;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.07em;
             text-transform: uppercase;
             color: var(--text-3);
         }
 
-        .pane-hint {
+        .card-hint {
             font-size: 11px;
             color: var(--text-3);
             margin-left: auto;
         }
+
+        .indicator {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--border-2);
+            transition: background 0.2s;
+        }
+        .indicator.on { background: var(--green); }
 
         textarea {
             flex: 1;
@@ -145,173 +161,216 @@
             outline: none;
             resize: none;
             font-family: var(--mono);
-            font-size: 13px;
+            font-size: 12.5px;
             line-height: 1.75;
-            padding: 16px;
+            padding: 14px 16px;
             color: var(--text);
             background: transparent;
-            caret-color: #1a1a1a;
+            caret-color: var(--accent);
+            min-height: 0;
         }
-
-        textarea::placeholder { color: var(--text-3); font-family: var(--sans); font-size: 13px; }
-        #output { color: #1a5c2e; background: #fafffe; }
+        textarea::placeholder { color: var(--text-3); font-family: var(--sans); font-size: 12.5px; font-style: italic; }
+        #output { color: var(--green); }
+        textarea::-webkit-scrollbar { width: 4px; }
+        textarea::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
         /* ── LOG ── */
-        .log-section {
-            background: var(--white);
-            border-top: 1px solid var(--border);
+        .log-wrap {
+            padding: 0 20px;
             flex-shrink: 0;
             display: none;
-            flex-direction: column;
-            max-height: 180px;
+            margin-top: 4px;
         }
-        .log-section.visible { display: flex; }
+        .log-wrap.visible { display: block; }
 
-        .log-header {
-            padding: 7px 16px;
+        .log-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            max-height: 170px;
+            box-shadow: 0 1px 3px rgba(0,0,0,.04);
+        }
+
+        .log-head {
+            padding: 7px 14px;
             border-bottom: 1px solid var(--border);
-            font-size: 11px;
-            color: var(--text-3);
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
+            background: var(--panel);
             flex-shrink: 0;
         }
 
-        .log-stat { display: flex; align-items: center; gap: 4px; }
-        .log-stat-dot { width: 6px; height: 6px; border-radius: 50%; }
+        .log-head-title { font-size: 11px; font-weight: 600; color: var(--text-2); }
+
+        .badge {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 1px 7px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .badge-spam { background: var(--red-bg);   color: var(--red);   }
+        .badge-del  { background: var(--amber-bg); color: var(--amber); }
+        .badge-fix  { background: var(--green-bg); color: var(--green); }
 
         .log-body {
             overflow-y: auto;
-            padding: 6px 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 1px;
+            max-height: 130px;
+            padding: 6px 10px;
         }
-
-        .log-body::-webkit-scrollbar { width: 4px; }
-        .log-body::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 2px; }
+        .log-body::-webkit-scrollbar { width: 3px; }
+        .log-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
         .log-row {
             display: grid;
-            grid-template-columns: 42px 64px 1fr 16px 80px;
+            grid-template-columns: 40px 60px 1fr 14px 90px;
             align-items: center;
             gap: 8px;
-            font-size: 11.5px;
+            font-size: 11px;
             font-family: var(--mono);
-            padding: 2px 4px;
-            border-radius: 4px;
+            padding: 3px 4px;
+            border-radius: 5px;
+            color: var(--text-2);
         }
         .log-row:hover { background: var(--bg); }
 
         .tag {
             font-size: 9px;
-            font-weight: 600;
-            letter-spacing: 0.08em;
+            font-weight: 700;
+            letter-spacing: 0.07em;
             padding: 1px 5px;
-            border-radius: 3px;
+            border-radius: 4px;
             text-align: center;
         }
-        .tag-spam { background: var(--tag-spam-bg); color: var(--tag-spam); }
-        .tag-del  { background: var(--tag-del-bg);  color: var(--tag-del); }
-        .tag-fix  { background: var(--tag-fix-bg);  color: var(--tag-fix); }
+        .t-spam { background: var(--red-bg);   color: var(--red); }
+        .t-del  { background: var(--amber-bg); color: var(--amber); }
+        .t-fix  { background: var(--green-bg); color: var(--green); }
 
-        .log-loc  { color: var(--text-3); font-size: 10.5px; }
-        .log-from { color: var(--tag-spam); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .log-arr  { color: var(--text-3); text-align: center; }
-        .log-to   { color: var(--tag-fix); }
-        .log-ctx  { grid-column: 1/-1; font-size: 10.5px; color: var(--text-3); padding-left: 50px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .r-loc  { color: var(--text-3); font-size: 10px; }
+        .r-from { color: var(--red); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .r-arr  { color: var(--text-3); text-align: center; }
+        .r-to   { color: var(--green); }
+        .r-ctx  { grid-column: 1/-1; font-size: 10px; color: var(--text-3); padding-left: 48px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        /* ── WM BAR ── */
-        .wm-bar {
-            background: var(--white);
-            border-top: 1px solid var(--border);
-            padding: 8px 16px;
+        /* ── BOTTOM BAR ── */
+        .bottom-bar {
             display: flex;
             align-items: center;
             gap: 10px;
+            padding: 10px 20px 14px;
             flex-shrink: 0;
+        }
+
+        .wm-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 6px 12px;
+            flex: 1;
+            box-shadow: 0 1px 3px rgba(0,0,0,.03);
         }
 
         .wm-label {
             font-size: 11px;
             font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
             color: var(--text-3);
-            letter-spacing: 0.04em;
             white-space: nowrap;
         }
 
-        .wm-input {
+        .wm-sep { width: 1px; height: 14px; background: var(--border); }
+
+        .field {
             font-family: var(--sans);
-            font-size: 12px;
-            border: 1px solid var(--border-dark);
-            border-radius: 6px;
-            padding: 4px 10px;
+            font-size: 12.5px;
+            border: none;
             outline: none;
+            background: transparent;
             color: var(--text);
-            background: var(--bg);
             flex: 1;
-            min-width: 140px;
-            transition: border-color 0.15s;
+            min-width: 120px;
         }
-        .wm-input:focus { border-color: #aaa; background: var(--white); }
+        .field::placeholder { color: var(--text-3); font-style: italic; }
 
-        .wm-count {
+        .field-count {
             font-family: var(--sans);
-            font-size: 12px;
-            border: 1px solid var(--border-dark);
+            font-size: 12.5px;
+            border: 1px solid var(--border);
             border-radius: 6px;
-            padding: 4px 8px;
+            padding: 2px 7px;
             outline: none;
-            color: var(--text);
             background: var(--bg);
+            color: var(--text);
             width: 54px;
-            transition: border-color 0.15s;
+            text-align: center;
         }
-        .wm-count:focus { border-color: #aaa; background: var(--white); }
+        .field-count:focus { border-color: var(--border-2); background: var(--white); }
 
-        .wm-note { font-size: 11px; color: var(--text-3); margin-left: auto; }
+        .wm-note { font-size: 11px; color: var(--text-3); white-space: nowrap; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <span class="title">Fix Text</span>
-    <div class="header-sep"></div>
-    <span class="status-pill" id="status">sẵn sàng</span>
-    <div class="header-actions">
+<!-- TOPBAR -->
+<div class="topbar">
+    <span class="logo">Fix<span>Text</span></span>
+    <span class="chip" id="status">sẵn sàng</span>
+    <div class="topbar-right">
         <button class="btn" onclick="clearAll()">✕ Xóa</button>
-        <button class="btn btn-copy" onclick="copyResult()">⎘ Copy kết quả</button>
+        <button class="btn btn-primary btn-copy-action" onclick="copyResult()">⎘ Copy kết quả</button>
     </div>
 </div>
 
-<div class="main">
-    <div class="pane">
-        <div class="pane-header">
-            <span class="pane-label">Input</span>
-            <span class="pane-hint">Paste vào để tự động xử lý</span>
+<!-- WORKSPACE -->
+<div class="workspace">
+    <div class="card">
+        <div class="card-head">
+            <span class="indicator on"></span>
+            <span class="card-label">Input</span>
+            <span class="card-hint">paste vào → tự xử lý</span>
         </div>
-        <textarea id="input" placeholder="Dán văn bản vào đây..."></textarea>
+        <textarea id="input" placeholder="Dán văn bản cần sửa vào đây…"></textarea>
     </div>
 
-    <div class="pane">
-        <div class="pane-header">
-            <span class="pane-label">Output</span>
+    <div class="card">
+        <div class="card-head">
+            <span class="indicator" id="out-dot"></span>
+            <span class="card-label">Output</span>
         </div>
-        <textarea id="output" readonly placeholder="Kết quả hiển thị ở đây..."></textarea>
+        <textarea id="output" readonly placeholder="Kết quả xuất hiện ở đây…"></textarea>
     </div>
 </div>
 
-<div class="log-section" id="log-section">
-    <div class="log-header" id="log-header"></div>
-    <div class="log-body" id="log-body"></div>
+<!-- LOG -->
+<div class="log-wrap" id="log-wrap">
+    <div class="log-card">
+        <div class="log-head">
+            <span class="log-head-title" id="log-title">thay đổi</span>
+            <span id="log-badges"></span>
+        </div>
+        <div class="log-body" id="log-body"></div>
+    </div>
 </div>
 
-<div class="wm-bar">
-    <span class="wm-label">Watermark</span>
-    <input class="wm-input" type="text" id="watermark-text" placeholder="Nội dung watermark..." value="Nguồn: Tài liệu nội bộ">
-    <input class="wm-count" type="number" id="watermark-count" min="1" max="50" value="2">
-    <span class="wm-note" id="wm-note">tự động chèn sau khi xử lý</span>
+<!-- BOTTOM BAR -->
+<div class="bottom-bar">
+    <div class="wm-group">
+        <span class="wm-label">Watermark</span>
+        <div class="wm-sep"></div>
+        <input class="field" type="text" id="wm-text" placeholder="Nội dung…" value="Nguồn: Tài liệu nội bộ">
+        <div class="wm-sep"></div>
+        <span class="wm-label" style="font-size:10px">SỐ LƯỢNG</span>
+        <input class="field-count" type="number" id="wm-count" min="0" max="50" value="2">
+    </div>
+    <span class="wm-note" id="wm-note">tự động chèn</span>
 </div>
 
 <script>
@@ -333,167 +392,179 @@
 
     // ── WATERMARK ──
     const zwChars = ['\u200D','\u200C','\u200B','\u200E','\u200F'];
-    const variations = ['\uFE00','\uFE01','\uFE02','\uFE0E','\uFE0F'];
-    const invisSeps = ['\u2060','\u2063','\uFEFF','\u180E'];
-    const spaceVars = ['\u0020','\u00A0','\u2002','\u2003','\u2009','\u200A'];
+    const varSels  = ['\uFE00','\uFE01','\uFE02','\uFE0E','\uFE0F'];
+    const invSeps  = ['\u2060','\u2063','\uFEFF','\u180E'];
+    const spVars   = ['\u0020','\u00A0','\u2002','\u2003','\u2009','\u200A'];
 
-    function loadWm() {
-        const s = localStorage.getItem('wmText');
-        if (s) document.getElementById('watermark-text').value = s;
-    }
-
-    function encodeWatermark(text) {
+    function encodeWm(text) {
         let e = text.split('').map((c,i) =>
             i > 0 && Math.random() > 0.3 ? zwChars[Math.floor(Math.random()*zwChars.length)] + c : c
         ).join('');
         e = e.split('').map((c,i,a) =>
-            i > 0 && i < a.length-1 && Math.random() > 0.5 ? c + invisSeps[Math.floor(Math.random()*invisSeps.length)] : c
+            i > 0 && i < a.length-1 && Math.random() > 0.5 ? c + invSeps[~~(Math.random()*invSeps.length)] : c
         ).join('');
-        e = e.split(' ').map((w,i) => i > 0 ? spaceVars[Math.floor(Math.random()*spaceVars.length)] + w : w).join('');
-        e = e.split('').map(c => Math.random() > 0.6 ? c + variations[Math.floor(Math.random()*variations.length)] : c).join('');
-        return e;
+        e = e.split(' ').map((w,i) => i ? spVars[~~(Math.random()*spVars.length)] + w : w).join('');
+        return e.split('').map(c => Math.random() > 0.6 ? c + varSels[~~(Math.random()*varSels.length)] : c).join('');
     }
 
-    function insertWatermark(text) {
-        const wt = document.getElementById('watermark-text').value.trim();
-        const wc = parseInt(document.getElementById('watermark-count').value) || 2;
-        if (!wt || !text.trim()) return text;
-        const lines = text.split('\n').filter(l => l.trim());
-        if (lines.length < 2) return text;
-        const maxWm = lines.length - 1;
+    // Chèn watermark vào clean text (không chạy lại trên output đã có wm)
+    function applyWatermark(cleanText) {
+        const wt = document.getElementById('wm-text').value.trim();
+        const wc = parseInt(document.getElementById('wm-count').value) || 0;
+
+        // Nếu count = 0 hoặc không có nội dung wm → trả về nguyên
+        if (wc === 0 || !wt) return cleanText;
+
+        const lines = cleanText.split('\n').filter(l => l.trim());
+        if (lines.length < 2) return cleanText;
+
+        const maxWm  = lines.length - 1;
         const actual = Math.min(wc, maxWm);
-        const pool = Array.from({length: maxWm}, (_,i) => i+1);
-        const sel = [];
+        const pool   = Array.from({length: maxWm}, (_, i) => i + 1);
+        const sel    = [];
         for (let i = 0; i < actual; i++) {
-            const ri = Math.floor(Math.random()*pool.length);
-            sel.push(pool[ri]); pool.splice(ri,1);
+            const ri = ~~(Math.random() * pool.length);
+            sel.push(pool[ri]); pool.splice(ri, 1);
         }
-        sel.sort((a,b) => a-b);
-        let result = [], wi = 0;
+        sel.sort((a,b) => a - b);
+
+        const result = [];
+        let wi = 0;
         for (let i = 0; i < lines.length; i++) {
             result.push(lines[i]);
-            if (wi < sel.length && sel[wi] === i+1) { result.push(encodeWatermark(wt)); wi++; }
+            if (wi < sel.length && sel[wi] === i + 1) {
+                result.push(encodeWm(wt));
+                wi++;
+            }
         }
         setWmNote(`Đã chèn ${actual} watermark`);
         return result.join('\n');
     }
 
     // ── SPAM ──
-    function isSpamBotLine(line) {
+    function isSpam(line) {
         const s = line.replace(/[?\[\]·●丶\s]/g,'').replace(/[\u200B-\u200F\u2060\u2063\uFEFF\u180E]/g,'');
         const kws = [/文件防盗印/,/找书机器人/,/稳定靠谱/,/不踩[坑雷]/,/小虎bot/i,/虎bot/i,/xiaohu/i,/xiAOHU/i,/找丶书/,/防丶盗/,/稳丶定/];
         let n = 0;
-        for (const k of kws) { if (k.test(s)) { n++; if (n >= 2) return true; } }
-        const qr = (line.match(/\?/g)||[]).length / line.length;
-        return qr > 0.3 && /[\u4e00-\u9fff]/.test(line);
+        for (const k of kws) { if (k.test(s) && ++n >= 2) return true; }
+        return (line.match(/\?/g)||[]).length / line.length > 0.3 && /[\u4e00-\u9fff]/.test(line);
     }
 
-    function isSpamTailLine(line) {
+    function isTail(line) {
         const t = line.trim();
         return t.length > 0 && /^[\?\？\[\]\s]+$/.test(t);
     }
 
     function removeSpam(text) {
-        const lines = text.split('\n'), result = [], removed = [];
-        let prevSpam = false;
+        const lines = text.split('\n'), out = [], removed = [];
+        let prev = false;
         for (let i = 0; i < lines.length; i++) {
-            if (isSpamBotLine(lines[i])) {
-                removed.push({ ln: i+1, content: lines[i], type:'spam' });
-                prevSpam = true;
-            } else if (prevSpam && isSpamTailLine(lines[i])) {
-                removed.push({ ln: i+1, content: lines[i], type:'tail' });
+            if (isSpam(lines[i])) {
+                removed.push({ln:i+1, content:lines[i], type:'spam'});
+                prev = true;
+            } else if (prev && isTail(lines[i])) {
+                removed.push({ln:i+1, content:lines[i], type:'tail'});
             } else {
-                result.push(lines[i]);
-                prevSpam = false;
+                out.push(lines[i]);
+                prev = false;
             }
         }
-        return { text: result.join('\n'), removed };
+        return { text: out.join('\n'), removed };
     }
 
-    // ── CORE ──
-    function process(input) {
-        if (!input.trim()) return { out: '', changes: [] };
-
+    // ── PROCESS ── (trả về clean text, chưa có watermark)
+    function processText(input) {
         let text = input;
         const changes = [];
 
-        // Bước 0: spam
+        // 0: spam
         const { text: t0, removed } = removeSpam(text);
         text = t0;
         for (const r of removed) {
             const p = r.content.length > 50 ? r.content.slice(0,50)+'…' : r.content;
-            changes.push({ type:'spam', from: p, to:'[xóa]', ln: r.ln, col:1, ctx: r.type==='tail'?'đuôi rác':'spam bot', pos:-1 });
+            changes.push({type:'spam', from:p, to:'[xóa]', ln:r.ln, col:1, ctx: r.type==='tail'?'đuôi rác':'spam bot', pos:-1});
         }
 
-        // Bước 1: xóa ký tự thừa
+        // 1: ký tự thừa
         const re1 = /[TtŤťṪṫṬṭṮṯṰṱŢţẗŦŧƭƬȚțŤťṬṭṰṱ][UuÚúÙùÛûÜüŨũŪūŬŭŮůŲųỤụỦủṲṳṴṵṶṷṸṹṺṻŰűŮůū́ŭų][\u0300-\u036F]*[\u2070-\u209F₀-₉ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥwₓᵧᶻ⁰-⁹¹²³⁴⁵⁶⁷⁸⁹ᵃ-ᶻ⁺⁻⁼⁽⁾₊₋₌₍₎]+/g;
         let m;
         while ((m = re1.exec(text)) !== null) {
-            const before = text.slice(0,m.index), ln = before.split('\n').length, ls = before.lastIndexOf('\n')+1;
-            changes.push({ type:'del', from: m[0], to:'[xóa]', ln, col: m.index-ls+1, ctx:'', pos: m.index });
+            const b = text.slice(0,m.index), ln = b.split('\n').length, ls = b.lastIndexOf('\n')+1;
+            changes.push({type:'del', from:m[0], to:'[xóa]', ln, col:m.index-ls+1, ctx:'', pos:m.index});
             re1.lastIndex = m.index+1;
         }
         text = text.replace(/[TtŤťṪṫṬṭṮṯṰṱŢţẗŦŧƭƬȚțŤťṬṭṰṱ][UuÚúÙùÛûÜüŨũŪūŬŭŮůŲųỤụỦủṲṳṴṵṶṷṸṹṺṻŰűŮůū́ŭų][\u0300-\u036F]*[\u2070-\u209F₀-₉ₐₑₕᵢⱼₖₗₘₙₒₚᵣₛₜᵤᵥwₓᵧᶻ⁰-⁹¹²³⁴⁵⁶⁷⁸⁹ᵃ-ᶻ⁺⁻⁼⁽⁾₊₋₌₍₎]+/g,'');
 
-        // Bước 2: charmap
+        // 2: charmap
         for (const [from, to] of Object.entries(charMap)) {
             const re = new RegExp(from,'g'); let mc;
             while ((mc = re.exec(text)) !== null) {
-                const before = text.slice(0,mc.index), ln = before.split('\n').length, ls = before.lastIndexOf('\n')+1;
-                changes.push({ type:'fix', from, to, ln, col: mc.index-ls+1, ctx:'', pos: mc.index });
+                const b = text.slice(0,mc.index), ln = b.split('\n').length, ls = b.lastIndexOf('\n')+1;
+                changes.push({type:'fix', from, to, ln, col:mc.index-ls+1, ctx:'', pos:mc.index});
                 re.lastIndex = mc.index+1;
             }
             text = text.replace(new RegExp(from,'g'), to);
         }
 
-        return { out: text, changes };
+        return { cleanText: text, changes };
     }
+
+    // State: giữ clean text để re-apply watermark khi đổi settings mà không chạy lại process
+    let _cleanText = '';
 
     function run() {
         const input = document.getElementById('input').value;
         if (!input.trim()) { clearAll(); return; }
 
-        const { out, changes } = process(input);
-        const final = insertWatermark(out);
-        document.getElementById('output').value = final;
+        const { cleanText, changes } = processText(input);
+        _cleanText = cleanText;
+
+        // Chèn watermark vào clean text
+        document.getElementById('output').value = applyWatermark(cleanText);
+        document.getElementById('out-dot').classList.toggle('on', !!cleanText.trim());
 
         renderLog(changes);
-
-        if (changes.length === 0) setStatus('không có thay đổi', '');
+        if (!changes.length) setStatus('không có thay đổi', '');
         else setStatus(`${changes.length} thay đổi`, 'ok');
     }
 
-    function renderLog(list) {
-        const sec = document.getElementById('log-section');
-        if (!list.length) { sec.classList.remove('visible'); return; }
+    // Khi đổi wm settings → chỉ re-apply watermark, không chạy lại process
+    function reapplyWm() {
+        if (!_cleanText) return;
+        document.getElementById('output').value = applyWatermark(_cleanText);
+    }
 
-        list.sort((a,b) => { const o={spam:0,del:1,fix:2}; return o[a.type]-o[b.type] || a.pos-b.pos; });
+    function renderLog(list) {
+        const wrap = document.getElementById('log-wrap');
+        if (!list.length) { wrap.classList.remove('visible'); return; }
+
+        list.sort((a,b) => { const o={spam:0,del:1,fix:2}; return o[a.type]-o[b.type]||a.pos-b.pos; });
 
         const nS = list.filter(c=>c.type==='spam').length;
         const nD = list.filter(c=>c.type==='del').length;
         const nF = list.filter(c=>c.type==='fix').length;
 
-        document.getElementById('log-header').innerHTML = `
-            <span style="font-weight:600;color:#1a1a1a">${list.length} thay đổi</span>
-            ${nS ? `<span class="log-stat"><span class="log-stat-dot" style="background:#d93025"></span>${nS} spam</span>` : ''}
-            ${nD ? `<span class="log-stat"><span class="log-stat-dot" style="background:#b45309"></span>${nD} xóa</span>` : ''}
-            ${nF ? `<span class="log-stat"><span class="log-stat-dot" style="background:#16a34a"></span>${nF} sửa</span>` : ''}
-        `;
+        document.getElementById('log-title').textContent = `${list.length} thay đổi`;
+        document.getElementById('log-badges').innerHTML = [
+            nS ? `<span class="badge badge-spam">✕ ${nS} spam</span>` : '',
+            nD ? `<span class="badge badge-del">− ${nD} xóa</span>` : '',
+            nF ? `<span class="badge badge-fix">✓ ${nF} sửa</span>` : '',
+        ].join('');
 
         document.getElementById('log-body').innerHTML = list.map(c => {
-            const tc = c.type==='spam'?'tag-spam': c.type==='del'?'tag-del':'tag-fix';
+            const tc = c.type==='spam'?'t-spam': c.type==='del'?'t-del':'t-fix';
             const tl = c.type==='spam'?'SPAM': c.type==='del'?'XÓA':'FIX';
             return `<div class="log-row">
                 <span class="tag ${tc}">${tl}</span>
-                <span class="log-loc">L${c.ln}:${c.col}</span>
-                <span class="log-from">${esc(c.from)}</span>
-                <span class="log-arr">→</span>
-                <span class="log-to">${esc(c.to)}</span>
-                ${c.ctx ? `<span class="log-ctx">${esc(c.ctx)}</span>` : ''}
+                <span class="r-loc">L${c.ln}:${c.col}</span>
+                <span class="r-from">${esc(c.from)}</span>
+                <span class="r-arr">→</span>
+                <span class="r-to">${esc(c.to)}</span>
+                ${c.ctx ? `<span class="r-ctx">${esc(c.ctx)}</span>` : ''}
             </div>`;
         }).join('');
 
-        sec.classList.add('visible');
+        wrap.classList.add('visible');
     }
 
     function esc(s) {
@@ -503,43 +574,61 @@
     function setStatus(msg, cls) {
         const el = document.getElementById('status');
         el.textContent = msg;
-        el.className = 'status-pill' + (cls ? ' '+cls : '');
+        el.className = 'chip' + (cls ? ' '+cls : '');
     }
 
     function setWmNote(msg) {
         const el = document.getElementById('wm-note');
         el.textContent = msg;
-        setTimeout(() => el.textContent = 'tự động chèn sau khi xử lý', 3000);
+        setTimeout(() => el.textContent = 'tự động chèn', 3000);
     }
 
     function clearAll() {
+        _cleanText = '';
         document.getElementById('input').value = '';
         document.getElementById('output').value = '';
-        document.getElementById('log-section').classList.remove('visible');
+        document.getElementById('log-wrap').classList.remove('visible');
+        document.getElementById('out-dot').classList.remove('on');
         setStatus('sẵn sàng', '');
     }
 
     function copyResult() {
         const v = document.getElementById('output').value;
-        if (!v.trim()) { setStatus('output trống', 'err'); return; }
-        navigator.clipboard.writeText(v)
-            .then(() => setStatus('đã copy!', 'ok'))
-            .catch(() => { document.getElementById('output').select(); document.execCommand('copy'); setStatus('đã copy!', 'ok'); });
+        if (!v.trim()) { setStatus('output trống', 'warn'); return; }
+        const btn = document.querySelector('.btn-copy-action');
+        const doFlash = () => {
+            btn.textContent = '✓ Đã copy!';
+            btn.classList.add('copied');
+            setTimeout(() => {
+                btn.innerHTML = '⎘ Copy kết quả';
+                btn.classList.remove('copied');
+            }, 2000);
+        };
+        navigator.clipboard.writeText(v).then(doFlash).catch(() => {
+            document.getElementById('output').select();
+            document.execCommand('copy');
+            doFlash();
+        });
     }
 
-    // Auto-run on input
+    // Events
     let _t;
     document.getElementById('input').addEventListener('input', () => {
         clearTimeout(_t);
         _t = setTimeout(run, 400);
     });
 
-    // Watermark settings persistence
-    document.getElementById('watermark-text').addEventListener('input', function() {
+    // Đổi watermark settings → re-apply thôi, không process lại
+    document.getElementById('wm-text').addEventListener('input', function() {
         localStorage.setItem('wmText', this.value);
+        reapplyWm();
     });
+    document.getElementById('wm-count').addEventListener('input', reapplyWm);
 
-    window.addEventListener('DOMContentLoaded', loadWm);
+    window.addEventListener('DOMContentLoaded', () => {
+        const s = localStorage.getItem('wmText');
+        if (s) document.getElementById('wm-text').value = s;
+    });
 </script>
 </body>
 </html>
